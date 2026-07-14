@@ -1,0 +1,14 @@
+# Raw datasets
+data/raw/
+
+# Processed datasets
+data/processed/
+
+# Virtual environment
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
