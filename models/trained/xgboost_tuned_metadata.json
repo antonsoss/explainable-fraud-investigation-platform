@@ -1,0 +1,78 @@
+{
+  "model_name": "XGBoost (tuned)",
+  "decision_threshold": 0.27569758892059326,
+  "threshold_rule": "maximum validation F2",
+  "primary_selection_metric": "validation average precision",
+  "score_column": "fraud_risk_score",
+  "score_semantics": "uncalibrated ranking score; not a fraud probability",
+  "random_state": 42,
+  "quick_run": false,
+  "training_rows_used": 413378,
+  "feature_count": 359,
+  "feature_schema_sha256": "0b8f43b176fb0af46738407f305abc9cb9797f84a70ea5b937eda5bf5e99e70d",
+  "data_split": {
+    "split_policy": "chronological 70/15/15 by TransactionDT",
+    "split_boundaries_elapsed_days": {
+      "training_start": 1.0,
+      "training_end": 120.81013888888889,
+      "validation_start": 120.8102199074074,
+      "validation_end": 152.22037037037038,
+      "test_start": 152.22083333333333,
+      "test_end": 182.99920138888888
+    },
+    "rows": {
+      "training": 413378,
+      "validation": 88581,
+      "test": 88581
+    },
+    "fraud_rates": {
+      "training": 0.03516878014795175,
+      "validation": 0.03434145019812375,
+      "test": 0.03480430340592226
+    },
+    "feature_count": 359,
+    "feature_schema_sha256": "0b8f43b176fb0af46738407f305abc9cb9797f84a70ea5b937eda5bf5e99e70d",
+    "calendar_warning": "TransactionDT has an unspecified origin; calendar weekday/weekend was not inferred."
+  },
+  "tuning": {
+    "requested": true,
+    "performed": true,
+    "cv": "3-fold expanding-window TimeSeriesSplit",
+    "scoring": "average_precision",
+    "best_cv_average_precision": 0.5447591075471658,
+    "best_parameters": {
+      "subsample": 0.7,
+      "reg_lambda": 1.0,
+      "n_estimators": 400,
+      "min_child_weight": 10,
+      "max_depth": 8,
+      "learning_rate": 0.08,
+      "colsample_bytree": 1.0
+    },
+    "selected_after_external_validation": true
+  },
+  "environment": {
+    "python": "3.11.15",
+    "pandas": "3.0.3",
+    "scikit_learn": "1.9.0",
+    "xgboost": "3.2.0"
+  },
+  "git_commit": "854df3fe428ef5cb5a95d81f3a59c79960bfe8b6",
+  "git_worktree_dirty_at_training": true,
+  "test_metrics": {
+    "Threshold": 0.27569758892059326,
+    "ROC-AUC": 0.8996274916514957,
+    "Average precision": 0.5212717480117319,
+    "Balanced accuracy": 0.7849962472447871,
+    "Precision": 0.32578486875965,
+    "Recall": 0.6159584819980538,
+    "F1": 0.4261669658886894,
+    "F2": 0.5228236330598536,
+    "Alerts": 5829,
+    "Alert rate": 0.06580417922579335,
+    "TN": 81568,
+    "FP": 3930,
+    "FN": 1184,
+    "TP": 1899
+  }
+}

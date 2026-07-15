@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Optional model-generated investigation summaries
+openai>=1.66,<3.0

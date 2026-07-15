@@ -7,6 +7,14 @@ data/processed/
 # Virtual environment
 .venv/
 
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Local secrets
+.env
+.env.*
+
 # Jupyter
 .ipynb_checkpoints/
 

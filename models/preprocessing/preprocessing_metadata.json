@@ -1,0 +1,24 @@
+{
+  "split_policy": "chronological 70/15/15 by TransactionDT",
+  "split_boundaries_elapsed_days": {
+    "training_start": 1.0,
+    "training_end": 120.81013888888889,
+    "validation_start": 120.8102199074074,
+    "validation_end": 152.22037037037038,
+    "test_start": 152.22083333333333,
+    "test_end": 182.99920138888888
+  },
+  "rows": {
+    "training": 413378,
+    "validation": 88581,
+    "test": 88581
+  },
+  "fraud_rates": {
+    "training": 0.03516878014795175,
+    "validation": 0.03434145019812375,
+    "test": 0.03480430340592226
+  },
+  "feature_count": 359,
+  "feature_schema_sha256": "0b8f43b176fb0af46738407f305abc9cb9797f84a70ea5b937eda5bf5e99e70d",
+  "calendar_warning": "TransactionDT has an unspecified origin; calendar weekday/weekend was not inferred."
+}

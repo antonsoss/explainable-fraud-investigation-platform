@@ -1,0 +1,5 @@
+{
+  "model_name": "XGBoost (tuned)",
+  "model_file": "xgboost_tuned.joblib",
+  "metadata_file": "xgboost_tuned_metadata.json"
+}
