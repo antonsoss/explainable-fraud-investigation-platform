@@ -1,0 +1,5 @@
+Outcome,Transactions,Share
+True positive,2219,0.025050518734265812
+False positive,1807,0.020399408451022227
+False negative,880,0.009934410313724162
+True negative,83675,0.9446156625009878
