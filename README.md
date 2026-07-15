@@ -31,7 +31,7 @@ These test results use the decision threshold selected on validation data by max
 | `04_Fraud_Investigation_AI_Assistant.ipynb` | Complete |
 | Fraud investigation platform (Streamlit) | Next |
 
-Notebook 04 uses native XGBoost feature importance, error cohorts, TF-IDF, and cosine similarity to retrieve comparable historical cases. It produces offline deterministic investigation summaries and includes an optional grounded LLM extension. SHAP and LIME are not used.
+Notebook 04 uses native XGBoost feature importance, error cohorts, TF-IDF, and cosine similarity to retrieve comparable historical cases. It produces offline deterministic investigation summaries and includes an optional grounded LLM extension.
 
 ## Repository structure
 

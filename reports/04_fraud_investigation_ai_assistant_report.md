@@ -2,7 +2,7 @@
 
 ## Scope
 
-This report interprets the frozen XGBoost fraud model at a global level, examines test-set errors, retrieves descriptively similar validation cases, and produces evidence-grounded investigation summaries. SHAP and LIME are not used. The assistant is decision support only.
+This report interprets the frozen XGBoost fraud model at a global level, examines test-set errors, retrieves descriptively similar validation cases, and produces evidence-grounded investigation summaries. The assistant supports human review and does not make autonomous decisions.
 
 ## Model context
 
