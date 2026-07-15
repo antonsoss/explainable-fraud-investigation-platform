@@ -37,7 +37,7 @@ This project is currently under active development.
 | Phase | Status |
 |---------|:------:|
 | Business Understanding | ✅ Completed |
-| Exploratory Data Analysis | 🚧 In Progress |
+| Exploratory Data Analysis | ✅ Completed |
 | Data Preprocessing | ⏳ Planned |
 | Feature Engineering | ⏳ Planned |
 | Model Development | ⏳ Planned |
@@ -289,8 +289,6 @@ University of Ottawa
 
 Software Developer | Machine Learning | Artificial Intelligence
 
-🌐 https://www.antoniososa.ca
-
 GitHub: https://github.com/antonsoss
 
-LinkedIn: https://www.linkedin.com/in/antonio-sosa
+LinkedIn: https://www.linkedin.com/in/antonsoss
