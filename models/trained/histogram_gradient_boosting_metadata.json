@@ -1,0 +1,26 @@
+{
+  "model_name": "Histogram gradient boosting",
+  "decision_threshold": 0.7169922674057125,
+  "threshold_rule": "maximum validation F2",
+  "primary_selection_metric": "validation average precision",
+  "random_state": 42,
+  "quick_run": false,
+  "training_rows_used": 413378,
+  "feature_count": 324,
+  "test_metrics": {
+    "Threshold": 0.7169922674057125,
+    "ROC-AUC": 0.9441107521421774,
+    "Average precision": 0.6751888925202153,
+    "Balanced accuracy": 0.8383965472212206,
+    "Precision": 0.5039388322520852,
+    "Recall": 0.7018393030009681,
+    "F1": 0.5866486850977748,
+    "F2": 0.6507300143609382,
+    "Alerts": 4316,
+    "Alert rate": 0.04872376694776532,
+    "TN": 83341,
+    "FP": 2141,
+    "FN": 924,
+    "TP": 2175
+  }
+}

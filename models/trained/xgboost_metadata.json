@@ -1,0 +1,26 @@
+{
+  "model_name": "XGBoost",
+  "decision_threshold": 0.7034381628036499,
+  "threshold_rule": "maximum validation F2",
+  "primary_selection_metric": "validation average precision",
+  "random_state": 42,
+  "quick_run": false,
+  "training_rows_used": 413378,
+  "feature_count": 324,
+  "test_metrics": {
+    "Threshold": 0.7034381628036499,
+    "ROC-AUC": 0.9511211443029971,
+    "Average precision": 0.7119391684466766,
+    "Balanced accuracy": 0.8474492390997868,
+    "Precision": 0.5511674118231495,
+    "Recall": 0.7160374314294934,
+    "F1": 0.6228771929824561,
+    "F2": 0.675618073316283,
+    "Alerts": 4026,
+    "Alert rate": 0.04544992718528804,
+    "TN": 83675,
+    "FP": 1807,
+    "FN": 880,
+    "TP": 2219
+  }
+}
