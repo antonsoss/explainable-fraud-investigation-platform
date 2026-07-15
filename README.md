@@ -10,7 +10,7 @@ Notebooks 01–03 form the course-aligned machine learning core. Notebook 04 and
 
 ## Current results
 
-Transactions are ordered by `TransactionDT`: the earliest 70% form training, the next 15% validation, and the latest 15% the final test period. Preprocessing produces 359 model features. An XGBoost model tuned with expanding-window cross-validation is the champion.
+Transactions are ordered by `TransactionDT`. Training contains 413,378 transactions from elapsed days 1.0–120.8, validation contains 88,581 transactions from days 120.8–152.2, and the final test contains 88,581 transactions from days 152.2–183.0. Their fraud rates are 3.52%, 3.43%, and 3.48%, respectively. Preprocessing produces 359 model features, and XGBoost tuned with expanding-window cross-validation is the champion.
 
 | Later-period test metric | Result |
 |---|---:|
@@ -21,9 +21,9 @@ Transactions are ordered by `TransactionDT`: the earliest 70% form training, the
 | F2 score | 0.5228 |
 | Alert rate | 6.58% |
 
-The threshold was selected on validation data by maximizing F2. Model outputs are uncalibrated fraud risk scores, not fraud probabilities.
+The validation average precision was 0.5904. Its decline to 0.5213 on the later test period indicates temporal generalization loss and is more conservative than the previous random-split estimate. The 0.2757 threshold was selected on validation data by maximizing F2. It generated 5,829 test alerts: 1,899 true positives and 3,930 false positives, while 1,184 fraud cases were missed. Model outputs are uncalibrated fraud risk scores, not fraud probabilities.
 
-The investigation layer evaluates TF-IDF retrieval on 500 balanced held-out queries. Fraud queries retrieve fraud-labeled reference cases at 4.59 times the reference prevalence. Retrieval remains descriptive evidence and does not explain or prove an individual outcome.
+The investigation layer evaluates TF-IDF retrieval on 500 balanced held-out queries. Fraud queries retrieved 15.8% fraud-labeled neighbors versus 3.4% reference prevalence, a 4.59× lift. Retrieval remains descriptive evidence and does not explain or prove an individual outcome.
 
 ## Workflow
 
