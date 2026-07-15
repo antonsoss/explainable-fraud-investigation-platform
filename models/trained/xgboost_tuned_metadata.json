@@ -57,7 +57,7 @@
     "scikit_learn": "1.9.0",
     "xgboost": "3.2.0"
   },
-  "git_commit": "854df3fe428ef5cb5a95d81f3a59c79960bfe8b6",
+  "git_commit": "08838fc9e0fba78affd350a4cc71d584ec49b85d",
   "git_worktree_dirty_at_training": true,
   "test_metrics": {
     "Threshold": 0.27569758892059326,
