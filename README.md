@@ -1,4 +1,4 @@
-# Explainable Fraud Investigation Platform
+# Explainable Fraud Detection and Investigation Platform
 
 An MIA 5100 machine learning project for detecting fraudulent transactions and supporting evidence-based human investigation.
 
