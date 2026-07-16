@@ -84,6 +84,21 @@ class FraudPipelineIntegrationTest(unittest.TestCase):
         self.assertTrue(result["fraud_risk_score"].between(0, 1).all())
         self.assertTrue(set(result["predicted_fraud"]).issubset({0, 1}))
 
+    def test_sparse_csv_with_all_missing_categorical_columns_scores(self):
+        example_file = PROJECT_ROOT / "examples" / "sample_merged_transactions.csv"
+        if not example_file.exists():
+            self.skipTest("Generate the synthetic scoring example first.")
+
+        raw = pd.read_csv(example_file)
+        result = self.pipeline.predict(raw)
+
+        self.assertEqual(len(result), 3)
+        self.assertListEqual(
+            result["TransactionID"].tolist(), [9_000_001, 9_000_002, 9_000_003]
+        )
+        self.assertTrue(result["fraud_risk_score"].between(0, 1).all())
+        self.assertSetEqual(set(result["predicted_fraud"]), {0, 1})
+
 
 if __name__ == "__main__":
     unittest.main()

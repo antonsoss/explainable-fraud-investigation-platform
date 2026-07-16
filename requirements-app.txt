@@ -1,4 +1,3 @@
--r requirements.txt
-
-# Final investigation application
-streamlit>=1.45,<2.0
+# Complete local application environment
+-r requirements-api.txt
+-r requirements-frontend.txt

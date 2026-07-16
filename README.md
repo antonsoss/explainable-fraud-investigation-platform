@@ -6,7 +6,7 @@ An MIA 5100 machine learning project for detecting fraudulent transactions and s
 
 The project uses the [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection/data) to compare classifiers under severe class imbalance. The workflow emphasizes chronological evaluation, training-only preprocessing, precision-recall analysis, operational threshold selection, model-native global interpretation, labeled reference-case retrieval, and human review.
 
-Notebooks 01–03 form the course-aligned machine learning core. Notebook 04 and the planned Streamlit application are applied investigation extensions.
+Notebooks 01–03 form the course-aligned machine learning core. Notebook 04 and the implemented application layer are applied investigation extensions. The final platform uses a standalone FastAPI backend and a Streamlit frontend connected only through HTTP/JSON.
 
 ## Current results
 
@@ -33,12 +33,13 @@ The investigation layer evaluates TF-IDF retrieval on 500 balanced held-out quer
 | `02_Data_Preprocessing_Feature_Engineering.ipynb` | Complete |
 | `03_Model_Development_Comparison.ipynb` | Complete |
 | `04_Fraud_Investigation_AI_Assistant.ipynb` | Complete |
-| Fraud investigation platform (Streamlit) | Next |
+| Fraud investigation API (FastAPI) | Complete |
+| Fraud investigation frontend (Streamlit) | Complete |
 
 ## Repository structure
 
 ```text
-├── app/                    # Streamlit application
+├── api/                    # Standalone FastAPI backend and services
 ├── data/                   # Raw and processed data (not tracked)
 ├── models/
 │   ├── preprocessing/     # Frozen preprocessing artifacts and schema metadata
@@ -47,11 +48,14 @@ The investigation layer evaluates TF-IDF retrieval on 500 balanced held-out quer
 ├── notebooks/             # EDA, preprocessing, modeling, and investigation
 ├── reports/               # Generated investigation report
 ├── results/               # Model, cohort, retrieval, and assistant outputs
+├── frontend/              # Standalone Streamlit frontend and API client
 ├── src/                   # Reusable raw-to-score pipeline
-├── tests/                 # Pipeline integration tests
+├── tests/                 # Pipeline integration and API contract tests
 ├── requirements.txt       # Core environment
+├── requirements-api.txt   # Backend environment
+├── requirements-frontend.txt # Frontend environment
 ├── requirements-llm.txt   # Optional model-generated summaries
-├── requirements-app.txt   # Future Streamlit application
+├── requirements-app.txt   # Complete local application environment
 └── requirements-lock.txt  # Verified direct dependency versions
 ```
 
@@ -73,6 +77,48 @@ brew install libomp
 
 Download the competition files from Kaggle, place them in `data/raw/`, and run the notebooks in numerical order.
 
+## Run the investigation platform
+
+Install the complete local application environment:
+
+```bash
+python -m pip install -r requirements-app.txt
+```
+
+Start the FastAPI backend from the repository root:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+The API documentation is available at `http://127.0.0.1:8000/docs`. In a second terminal, start the standalone frontend:
+
+```bash
+streamlit run frontend/streamlit_app.py
+```
+
+The frontend uses `http://127.0.0.1:8000/api/v1` by default. Set `FRAUD_API_URL` to point it at another API deployment. The backend can use `FRAUD_PROJECT_ROOT` when artifacts are mounted outside the repository and `FRAUD_ALLOWED_ORIGINS` to configure comma-separated browser origins.
+
+### API endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/health` | Check artifact readiness |
+| `GET` | `/api/v1/model` | Read the frozen model contract |
+| `GET` | `/api/v1/metrics` | Read persisted evaluation results |
+| `POST` | `/api/v1/predict` | Score merged raw transaction records |
+| `GET` | `/api/v1/investigations` | List sanitized demonstration cases |
+| `POST` | `/api/v1/similar-transactions` | Retrieve labeled validation references |
+| `POST` | `/api/v1/investigate` | Return evidence and a grounded summary |
+
+The frontend does not import model code or load joblib artifacts. The API owns preprocessing, scoring, retrieval, and assistant evidence. Demonstration investigations intentionally withhold the query transaction's individual ground-truth label from the assistant-facing response.
+
+For the **Score merged raw transactions** page, upload `examples/sample_merged_transactions.csv`. It contains three synthetic records with the complete 433-column merged raw schema and no ground-truth label. Regenerate it after a schema change with:
+
+```bash
+python scripts/create_example_score_csv.py
+```
+
 ## Reusable scoring contract
 
 `src/fraud_pipeline.py` provides one interface that converts merged raw transaction and identity records into the frozen 359-feature schema and returns risk scores and alerts.
@@ -86,7 +132,7 @@ results = pipeline.predict(raw_transactions)
 
 Only load project-generated joblib files; joblib uses pickle internally and is unsafe for untrusted artifacts.
 
-Run the integration tests with:
+Run the pipeline and API contract tests with:
 
 ```bash
 python -m unittest discover -s tests -v
@@ -103,6 +149,6 @@ export OPENAI_API_KEY="your-key"
 
 Then set `RUN_OPENAI_LLM = True` in Notebook 04. No transaction evidence is sent unless that switch is enabled. Never commit API keys.
 
-## Next phase
+## Application scope
 
-The final phase will integrate performance and alert-volume KPIs, transaction profiles, labeled reference cases, deterministic or optional generated summaries, cohort limitations, and human-review controls into a Streamlit application.
+The final platform integrates saved performance and alert-volume KPIs, transaction profiles, labeled reference cases, deterministic summaries, cohort limitations, and human-review controls. It consumes frozen notebook artifacts and does not retrain the model or use the final test set for additional selection.

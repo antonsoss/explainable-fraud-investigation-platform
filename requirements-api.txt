@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Standalone model and investigation API
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.34,<1.0
+

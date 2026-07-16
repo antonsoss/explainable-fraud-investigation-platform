@@ -104,6 +104,12 @@ class FraudPreprocessor:
         frame.loc[:, self.numeric_columns] = self.median_imputer.transform(
             frame[self.numeric_columns]
         )
+
+        # A CSV upload can contain a categorical feature that is blank in every
+        # submitted row. Pandas then infers float64, which cannot accept the
+        # string modes produced by the frozen categorical imputer.
+        for column in self.categorical_columns:
+            frame[column] = frame[column].astype("object")
         frame.loc[:, self.categorical_columns] = self.mode_imputer.transform(
             frame[self.categorical_columns]
         )
