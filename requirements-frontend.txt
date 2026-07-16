@@ -1,5 +1,0 @@
-# Standalone Streamlit frontend; model libraries are intentionally excluded
-pandas>=2.2,<4.0
-requests>=2.32,<3.0
-streamlit>=1.45,<2.0
-

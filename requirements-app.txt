@@ -1,3 +1,0 @@
-# Complete local application environment
--r requirements-api.txt
--r requirements-frontend.txt

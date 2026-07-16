@@ -54,13 +54,7 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 ├── frontend/              # Standalone Streamlit frontend and API client
 ├── src/                   # Reusable raw-to-score pipeline
 ├── tests/                 # Pipeline integration and API contract tests
-├── requirements.txt       # Core environment
-├── requirements-api.txt   # Backend environment
-├── requirements-frontend.txt # Frontend environment
-├── requirements-llm.txt   # Optional model-generated summaries
-├── requirements-xai.txt   # Notebook-only SHAP and LIME extension
-├── requirements-app.txt   # Complete local application environment
-└── requirements-lock.txt  # Verified direct dependency versions
+└── requirements.txt       # Complete notebooks and application environment
 ```
 
 ## Setup
@@ -73,28 +67,21 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-For the exact verified direct dependency versions, install `requirements-lock.txt`. On macOS, XGBoost also requires:
+On macOS, XGBoost also requires:
 
 ```bash
 brew install libomp
 ```
 
-Download the competition files from Kaggle and place them in `data/raw/`. Run Notebooks 01–04 in numerical order. To reproduce Notebook 05 and its exported explanation artifacts, install its separate environment additions and execute it last:
+Download the competition files from Kaggle and place them in `data/raw/`. Run Notebooks 01–05 in numerical order. Notebook 05 produces the SHAP and LIME artifacts consumed by the application.
 
 ```bash
-python -m pip install -r requirements-xai.txt
 jupyter notebook notebooks/05_XAI_Model_Explanations.ipynb
 ```
 
 The API and frontend consume the precomputed XAI files and do not import SHAP or LIME at runtime.
 
 ## Run the investigation platform
-
-Install the complete local application environment:
-
-```bash
-python -m pip install -r requirements-app.txt
-```
 
 Start the FastAPI backend from the repository root:
 
@@ -152,10 +139,9 @@ python -m unittest discover -s tests -v
 
 ## Optional investigation summaries
 
-The core investigation workflow and deterministic summaries require no API key. To enable optional OpenAI-generated summaries:
+The core investigation workflow and deterministic summaries require no API key. The OpenAI SDK is installed with the project environment but remains disabled by default. To enable optional OpenAI-generated summaries:
 
 ```bash
-python -m pip install -r requirements-llm.txt
 export OPENAI_API_KEY="your-key"
 ```
 
