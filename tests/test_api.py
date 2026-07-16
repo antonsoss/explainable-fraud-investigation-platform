@@ -33,6 +33,7 @@ class FraudApiContractTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["status"], "ready")
+        self.assertEqual(payload["version"], "1.1.0")
         self.assertTrue(payload["artifacts_ready"])
         self.assertEqual(payload["missing_artifacts"], [])
 
@@ -54,6 +55,27 @@ class FraudApiContractTest(unittest.TestCase):
         self.assertEqual(metrics["TP"], 1899)
         self.assertEqual(metrics["FP"], 3930)
 
+    def test_xai_contract_matches_executed_notebook_results(self):
+        response = self.client.get("/api/v1/xai")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["shap"]["top_global_feature"], "TransactionDT")
+        self.assertEqual(payload["shap"]["global_reporting_rows"], 1000)
+        self.assertLess(
+            payload["shap"]["maximum_global_reconstruction_error"], 1e-5
+        )
+        self.assertAlmostEqual(
+            payload["lime"]["mean_local_fidelity_r2"], 0.1884388063
+        )
+        self.assertFalse(payload["model_or_threshold_changed"])
+        self.assertEqual(payload["top_global_features"][0]["feature"], "TransactionDT")
+
+    def test_xai_figure_is_served_by_the_backend(self):
+        response = self.client.get("/artifacts/xai/shap_global_beeswarm.png")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["content-type"], "image/png")
+        self.assertGreater(len(response.content), 1000)
+
     def test_investigation_view_withholds_query_ground_truth(self):
         cases_response = self.client.get("/api/v1/investigations")
         self.assertEqual(cases_response.status_code, 200)
@@ -74,6 +96,17 @@ class FraudApiContractTest(unittest.TestCase):
         self.assertTrue(
             investigation["assistant_summary"]["automated_checks_pass"]
         )
+        explanation = investigation["model_explanation"]
+        self.assertEqual(explanation["transaction_id"], cases[0]["transaction_id"])
+        self.assertEqual(len(explanation["shap"]["contributions"]), 10)
+        self.assertEqual(len(explanation["lime"]["contributions"]), 10)
+        self.assertLess(
+            explanation["shap"]["maximum_local_reconstruction_error"], 1e-5
+        )
+        self.assertIn("Secondary", explanation["lime"]["role"])
+        serialized = json.dumps(explanation)
+        self.assertNotIn('"Outcome"', serialized)
+        self.assertNotIn('"isFraud"', serialized)
 
     def test_unknown_investigation_transaction_returns_404(self):
         response = self.client.post(

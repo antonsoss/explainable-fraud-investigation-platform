@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Post-hoc explanation notebook only; not required by the API or frontend
+shap>=0.50,<0.52
+lime>=0.2.0.1,<0.3

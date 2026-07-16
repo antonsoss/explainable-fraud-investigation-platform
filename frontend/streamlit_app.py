@@ -53,6 +53,16 @@ def load_demo_cases(api_url: str) -> list[dict]:
 
 
 @st.cache_data(ttl=300, show_spinner=False)
+def load_xai(api_url: str) -> dict:
+    return FraudApiClient(api_url).xai()
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_artifact(api_url: str, path: str) -> bytes:
+    return FraudApiClient(api_url).artifact_bytes(path)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
 def load_investigation(api_url: str, transaction_id: int) -> dict:
     return FraudApiClient(api_url).investigate(transaction_id)
 
@@ -126,6 +136,119 @@ def render_overview(api_url: str) -> None:
     )
 
 
+def render_explanations(api_url: str) -> None:
+    st.title("Model explanations")
+    st.caption(
+        "Post-hoc analysis of the frozen tuned XGBoost model. Notebook 05 used the "
+        "final test set for reporting only; it did not change the model or threshold."
+    )
+
+    xai = load_xai(api_url)
+    shap_summary = xai["shap"]
+    lime_summary = xai["lime"]
+
+    st.subheader("Explanation diagnostics")
+    primary_diagnostics = st.columns(2)
+    primary_diagnostics[0].markdown(
+        f"**Top global feature**  \n`{shap_summary['top_global_feature']}`"
+    )
+    primary_diagnostics[1].markdown(
+        "**SHAP vs. gain rank correlation**  \n"
+        f"`{shap_summary['native_gain_spearman_rank_correlation']:.3f}`"
+    )
+    reliability_diagnostics = st.columns(2)
+    reliability_diagnostics[0].markdown(
+        "**Maximum SHAP reconstruction error**  \n"
+        f"`{shap_summary['maximum_global_reconstruction_error']:.2e}`"
+    )
+    reliability_diagnostics[1].markdown(
+        "**Mean LIME local fidelity R²**  \n"
+        f"`{lime_summary['mean_local_fidelity_r2']:.3f}`"
+    )
+
+    st.warning(
+        "TransactionDT is elapsed time from an unspecified origin. Its prominence may "
+        "reflect temporal drift or transaction ordering; it is not a calendar effect "
+        "or a causal reason for fraud."
+    )
+
+    global_bar, beeswarm = st.columns(2)
+    with global_bar:
+        st.image(
+            load_artifact(api_url, xai["figures"]["global_bar"]),
+            caption="Global mean absolute SHAP magnitude",
+            width="stretch",
+        )
+    with beeswarm:
+        st.image(
+            load_artifact(api_url, xai["figures"]["global_beeswarm"]),
+            caption="Feature values and their signed score contributions",
+            width="stretch",
+        )
+
+    st.subheader("Leading global features")
+    importance = dataframe_from_records(xai["top_global_features"])
+    importance = importance.rename(columns={
+        "feature": "Feature",
+        "mean_absolute_shap": "Mean |SHAP|",
+        "mean_signed_shap": "Mean signed SHAP",
+        "positive_contribution_share": "Positive share",
+        "shap_rank": "SHAP rank",
+        "gain_rank": "Gain rank",
+        "feature_family": "Feature family",
+    })
+    st.dataframe(
+        importance[[
+            "SHAP rank",
+            "Feature",
+            "Feature family",
+            "Mean |SHAP|",
+            "Mean signed SHAP",
+            "Positive share",
+            "Gain rank",
+        ]],
+        hide_index=True,
+        width="stretch",
+    )
+
+    comparison, dependence = st.columns(2)
+    with comparison:
+        st.subheader("SHAP and native gain")
+        st.image(
+            load_artifact(api_url, xai["figures"]["native_comparison"]),
+            caption="Different importance definitions need not produce identical ranks",
+            width="stretch",
+        )
+    with dependence:
+        st.subheader("Feature contribution pattern")
+        feature = st.selectbox(
+            "Dependence feature", options=list(xai["figures"]["dependence"])
+        )
+        st.image(
+            load_artifact(api_url, xai["figures"]["dependence"][feature]),
+            caption=f"Processed {feature} value versus its SHAP contribution",
+            width="stretch",
+        )
+
+    st.subheader("LIME reliability check")
+    st.error(
+        "LIME is secondary supporting evidence in this project. Its mean local "
+        f"fidelity is R²={lime_summary['mean_local_fidelity_r2']:.3f}, so its sparse "
+        "surrogate weights should not replace the verified SHAP decomposition."
+    )
+    fidelity = dataframe_from_records(xai["lime_case_fidelity"])
+    fidelity = fidelity.rename(columns={
+        "transaction_id": "Transaction ID",
+        "lime_local_fidelity_r2": "Local fidelity R²",
+        "lime_local_prediction": "LIME prediction",
+        "model_risk_score": "Model risk score",
+        "absolute_local_prediction_error": "Absolute error",
+    })
+    st.dataframe(fidelity, hide_index=True, width="stretch")
+    st.caption(lime_summary["warning"])
+    st.error(xai["required_boundary"])
+
+
 def render_investigation(api_url: str) -> None:
     st.title("Transaction investigation")
     st.caption(
@@ -153,15 +276,25 @@ def render_investigation(api_url: str) -> None:
     signal = investigation["model_signal"]
 
     status = "Alert generated" if signal["alert_generated"] else "No alert"
-    columns = st.columns(4)
-    columns[0].metric("Risk score", format_percent(signal["fraud_risk_score"], 2))
-    columns[1].metric("Model decision", status)
-    columns[2].metric("Amount", f"${transaction['transaction_amount']:,.2f}")
-    columns[3].metric("Amount percentile", format_percent(transaction["amount_percentile"]))
+    signal_columns = st.columns(2)
+    signal_columns[0].markdown(
+        "**Risk score**  \n"
+        f"`{format_percent(signal['fraud_risk_score'], 2)}`"
+    )
+    signal_columns[1].markdown(f"**Model decision**  \n`{status}`")
+    transaction_columns = st.columns(2)
+    transaction_columns[0].markdown(
+        f"**Amount**  \n`${transaction['transaction_amount']:,.2f}`"
+    )
+    transaction_columns[1].markdown(
+        "**Amount percentile**  \n"
+        f"`{format_percent(transaction['amount_percentile'])}`"
+    )
 
     st.warning(signal["score_warning"])
 
-    profile, evidence = st.columns([1, 2])
+    profile = st.container()
+    evidence = st.container()
     with profile:
         st.subheader("Transaction profile")
         profile_rows = [
@@ -203,6 +336,81 @@ def render_investigation(api_url: str) -> None:
             "Reference labels are historical context. Similarity does not prove that "
             "the query transaction has the same outcome."
         )
+
+    st.subheader("Post-hoc model explanation")
+    explanation = investigation["model_explanation"]
+    explanation_metrics = st.columns(3)
+    explanation_metrics[0].metric(
+        "SHAP base risk score", format_percent(explanation["base_risk_score"], 2)
+    )
+    explanation_metrics[1].metric(
+        "Model risk score", format_percent(explanation["model_risk_score"], 2)
+    )
+    explanation_metrics[2].metric(
+        "Frozen threshold", format_percent(explanation["decision_threshold"], 2)
+    )
+
+    shap_tab, lime_tab = st.tabs(["SHAP — primary", "LIME — secondary"])
+    with shap_tab:
+        shap_evidence = explanation["shap"]
+        st.image(
+            load_artifact(api_url, shap_evidence["figure"]),
+            caption="Local score decomposition for this transaction",
+            width="stretch",
+        )
+        contributions = dataframe_from_records(shap_evidence["contributions"])
+        contributions = contributions.rename(columns={
+            "rank": "Rank",
+            "feature": "Feature",
+            "processed_feature_value": "Processed value",
+            "shap_contribution": "SHAP contribution",
+            "direction": "Direction",
+        })
+        st.dataframe(
+            contributions[[
+                "Rank",
+                "Feature",
+                "Processed value",
+                "SHAP contribution",
+                "Direction",
+            ]],
+            hide_index=True,
+            width="stretch",
+        )
+        st.info(shap_evidence["interpretation"])
+
+    with lime_tab:
+        lime_evidence = explanation["lime"]
+        st.error(
+            f"Secondary evidence only · local fidelity R²="
+            f"{lime_evidence['local_fidelity_r2']:.3f} · "
+            f"absolute prediction error={lime_evidence['absolute_prediction_error']:.3f}."
+        )
+        st.image(
+            load_artifact(api_url, lime_evidence["figure"]),
+            caption="Sparse LIME surrogate around this transaction",
+            width="stretch",
+        )
+        contributions = dataframe_from_records(lime_evidence["contributions"])
+        contributions = contributions.rename(columns={
+            "rank": "Rank",
+            "feature": "Feature",
+            "condition": "Local condition",
+            "lime_weight": "LIME weight",
+            "direction": "Direction",
+        })
+        st.dataframe(
+            contributions[[
+                "Rank",
+                "Feature",
+                "Local condition",
+                "LIME weight",
+                "Direction",
+            ]],
+            hide_index=True,
+            width="stretch",
+        )
+        st.caption(lime_evidence["warning"])
 
     st.subheader("Investigation assistant")
     assistant = investigation["assistant_summary"]
@@ -258,7 +466,9 @@ def render_methodology(api_url: str) -> None:
     st.write(
         "Notebooks 01–03 provide the course-aligned machine learning workflow. "
         "Notebook 04 exports retrieval evidence and grounded assistant summaries. "
-        "The API owns all artifacts; the frontend is presentation-only."
+        "Notebook 05 adds the MIA 5126 post-hoc SHAP and LIME extension without "
+        "changing the model. The API owns all artifacts; the frontend is "
+        "presentation-only."
     )
 
     st.subheader("Frozen model contract")
@@ -277,7 +487,9 @@ def render_methodology(api_url: str) -> None:
 - The data has an unspecified time origin and anonymized fields.
 - Later-period results show temporal generalization loss.
 - Risk scores are uncalibrated ranking scores, not fraud probabilities.
-- Global model importance does not explain an individual prediction.
+- SHAP and LIME describe learned model behavior; neither establishes causality.
+- TransactionDT importance may reflect temporal drift or transaction ordering.
+- LIME has low local fidelity for these cases and is secondary evidence only.
 - Similar-case retrieval depends on selected tokens and is contextual only.
 - Missing attributes and cohort-level recall gaps require monitoring.
 - The assistant cannot establish fraud or make an autonomous enforcement decision.
@@ -289,7 +501,13 @@ def render_methodology(api_url: str) -> None:
 api_url = st.sidebar.text_input("Fraud API URL", value=DEFAULT_API_URL)
 page = st.sidebar.radio(
     "Navigation",
-    ["Overview", "Investigation", "Score transactions", "Methodology"],
+    [
+        "Overview",
+        "Model explanations",
+        "Investigation",
+        "Score transactions",
+        "Methodology",
+    ],
 )
 
 try:
@@ -309,6 +527,8 @@ else:
 try:
     if page == "Overview":
         render_overview(api_url)
+    elif page == "Model explanations":
+        render_explanations(api_url)
     elif page == "Investigation":
         render_investigation(api_url)
     elif page == "Score transactions":

@@ -1,0 +1,65 @@
+{
+  "model_name": "XGBoost (tuned)",
+  "model_file": "xgboost_tuned.joblib",
+  "decision_threshold": 0.27569758892059326,
+  "score_semantics": "uncalibrated ranking score; not a fraud probability",
+  "feature_count": 359,
+  "random_state": 42,
+  "test_reporting_only": true,
+  "model_or_threshold_changed": false,
+  "shap": {
+    "version": "0.51.0",
+    "explainer": "TreeExplainer",
+    "feature_perturbation": "interventional",
+    "model_output": "probability",
+    "output_description": "uncalibrated fraud risk-score units",
+    "background_source": "fixed random training sample",
+    "background_rows": 100,
+    "global_reporting_source": "fixed random test sample",
+    "global_reporting_rows": 1000,
+    "base_risk_score": 0.15037861629422353,
+    "maximum_global_reconstruction_error": 3.824676703123586e-07,
+    "maximum_local_reconstruction_error": 1.5285633514494634e-07,
+    "native_gain_spearman_rank_correlation": 0.6213260505335014,
+    "top_global_feature": "TransactionDT"
+  },
+  "lime": {
+    "version": "0.2.0.1",
+    "reference_source": "fixed random training sample",
+    "reference_rows": 10000,
+    "perturbations_per_case": 5000,
+    "features_per_case": 20,
+    "mean_local_fidelity_r2": 0.18843880626887766,
+    "minimum_local_fidelity_r2": 0.10544439616191215,
+    "warning": "LIME explains a fitted local surrogate. Review local R2 before using its weights as supporting evidence."
+  },
+  "representative_transaction_ids": [
+    3519397,
+    3524909,
+    3551357,
+    3541077
+  ],
+  "figures": {
+    "global_bar": "shap_global_bar.png",
+    "global_beeswarm": "shap_global_beeswarm.png",
+    "native_comparison": "shap_vs_native_importance.png",
+    "dependence": {
+      "TransactionDT": "shap_dependence_TransactionDT.png",
+      "C13": "shap_dependence_C13.png",
+      "C1": "shap_dependence_C1.png"
+    },
+    "waterfall": {
+      "3519397": "shap_waterfall_3519397.png",
+      "3524909": "shap_waterfall_3524909.png",
+      "3551357": "shap_waterfall_3551357.png",
+      "3541077": "shap_waterfall_3541077.png"
+    },
+    "lime": {
+      "3519397": "lime_3519397.png",
+      "3524909": "lime_3524909.png",
+      "3551357": "lime_3551357.png",
+      "3541077": "lime_3541077.png"
+    }
+  },
+  "required_boundary": "Post-hoc model-behavior evidence only; not causal proof or an autonomous fraud decision."
+}

@@ -20,6 +20,12 @@ class FraudApiClient:
 
     def __post_init__(self) -> None:
         self.base_url = self.base_url.rstrip("/")
+        api_suffix = "/api/v1"
+        self.server_url = (
+            self.base_url[: -len(api_suffix)]
+            if self.base_url.endswith(api_suffix)
+            else self.base_url
+        )
 
     def _request(self, method: str, path: str, **kwargs) -> Any:
         try:
@@ -53,6 +59,25 @@ class FraudApiClient:
     def metrics(self) -> dict[str, Any]:
         return self._request("GET", "/metrics")
 
+    def xai(self) -> dict[str, Any]:
+        return self._request("GET", "/xai")
+
+    def artifact_bytes(self, path: str) -> bytes:
+        """Download a trusted figure path returned by the API."""
+        if not path.startswith("/artifacts/xai/"):
+            raise FraudApiError("The API returned an unexpected artifact path.")
+        try:
+            response = self.session.get(
+                f"{self.server_url}{path}", timeout=self.timeout_seconds
+            )
+        except requests.RequestException as error:
+            raise FraudApiError(f"Could not reach the fraud API: {error}") from error
+        if not response.ok:
+            raise FraudApiError(
+                f"Artifact request failed ({response.status_code}): {response.text}"
+            )
+        return response.content
+
     def demo_cases(self) -> list[dict[str, Any]]:
         return self._request("GET", "/investigations")["transactions"]
 
@@ -74,4 +99,3 @@ class FraudApiClient:
         return self._request(
             "POST", "/predict", json={"transactions": transactions}
         )
-

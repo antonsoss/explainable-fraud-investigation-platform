@@ -7,6 +7,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from api.config import Settings
 from api.schemas import (
@@ -19,9 +20,10 @@ from api.schemas import (
 from api.services.investigation_service import InvestigationService
 from api.services.metrics_service import MetricsService
 from api.services.model_service import ModelService
+from api.services.xai_service import XAIService
 
 
-API_VERSION = "1.0.0"
+API_VERSION = "1.1.0"
 settings = Settings.from_environment()
 
 app = FastAPI(
@@ -40,6 +42,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 router = APIRouter(prefix="/api/v1")
+app.mount(
+    "/artifacts/xai",
+    StaticFiles(
+        directory=settings.project_root / "results" / "xai" / "figures",
+        check_dir=False,
+    ),
+    name="xai-artifacts",
+)
 
 
 @lru_cache(maxsize=1)
@@ -57,15 +67,45 @@ def investigation_service() -> InvestigationService:
     return InvestigationService(settings.project_root)
 
 
+@lru_cache(maxsize=1)
+def xai_service() -> XAIService:
+    return XAIService(settings.project_root)
+
+
 def required_artifacts(project_root: Path) -> list[Path]:
-    return [
+    xai_figure_names = [
+        "shap_global_bar.png",
+        "shap_global_beeswarm.png",
+        "shap_vs_native_importance.png",
+        "shap_dependence_TransactionDT.png",
+        "shap_dependence_C13.png",
+        "shap_dependence_C1.png",
+        "shap_waterfall_3519397.png",
+        "shap_waterfall_3524909.png",
+        "shap_waterfall_3541077.png",
+        "shap_waterfall_3551357.png",
+        "lime_3519397.png",
+        "lime_3524909.png",
+        "lime_3541077.png",
+        "lime_3551357.png",
+    ]
+    required = [
         project_root / "models" / "trained" / "champion_manifest.json",
         project_root / "models" / "preprocessing" / "selected_features.pkl",
         project_root / "models" / "investigation" / "tfidf_vectorizer.joblib",
         project_root / "models" / "investigation" / "validation_case_matrix.npz",
         project_root / "models" / "investigation" / "validation_case_library.parquet",
         project_root / "results" / "investigation" / "assistant_summaries.parquet",
+        project_root / "results" / "xai" / "xai_metadata.json",
+        project_root / "results" / "xai" / "shap_global_importance.csv",
+        project_root / "results" / "xai" / "local_shap_values.parquet",
+        project_root / "results" / "xai" / "local_lime_values.parquet",
     ]
+    required.extend(
+        project_root / "results" / "xai" / "figures" / filename
+        for filename in xai_figure_names
+    )
+    return required
 
 
 @app.get("/", include_in_schema=False)
@@ -109,6 +149,14 @@ def metrics() -> dict:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 
+@router.get("/xai", tags=["Model Explanations"])
+def xai(top_n: int = 20) -> dict:
+    try:
+        return xai_service().global_summary(top_n=top_n)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
 @router.post("/predict", response_model=PredictionResponse, tags=["Scoring"])
 def predict(payload: RawTransactionBatch) -> dict:
     try:
@@ -148,7 +196,11 @@ def similar_transactions(payload: SimilarTransactionsRequest) -> dict:
 @router.post("/investigate", tags=["Investigation"])
 def investigate(payload: InvestigationRequest) -> dict:
     try:
-        return investigation_service().investigate(payload.transaction_id)
+        result = investigation_service().investigate(payload.transaction_id)
+        result["model_explanation"] = xai_service().local_explanation(
+            payload.transaction_id
+        )
+        return result
     except KeyError as error:
         raise HTTPException(status_code=404, detail=error.args[0]) from error
     except FileNotFoundError as error:
@@ -156,4 +208,3 @@ def investigate(payload: InvestigationRequest) -> dict:
 
 
 app.include_router(router)
-
