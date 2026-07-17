@@ -171,7 +171,10 @@ class FraudScoringPipeline:
         model_dir = root / "models" / "trained"
         manifest_path = model_dir / "champion_manifest.json"
         if not manifest_path.exists():
-            raise FileNotFoundError("Run Notebook 03 to create champion_manifest.json.")
+            raise FileNotFoundError(
+                "Run 03_ML_Model_Selection_Tuning_Evaluation.ipynb "
+                "to create champion_manifest.json."
+            )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         model = joblib.load(model_dir / manifest["model_file"])
         metadata = json.loads(

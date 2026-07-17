@@ -31,9 +31,9 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 
 | Notebook | Status |
 |---|:---:|
-| `01_EDA_Business_Understanding.ipynb` | Complete |
+| `01_Exploratory_Data_Analysis_Business_Understanding.ipynb` | Complete |
 | `02_Data_Wrangling_Preprocessing_Feature_Engineering.ipynb` | Complete |
-| `03_Model_Development_Comparison.ipynb` | Complete |
+| `03_ML_Model_Selection_Tuning_Evaluation.ipynb` | Complete |
 | `04_Fraud_Investigation_AI_Assistant.ipynb` | Complete |
 | `05_XAI_Model_Explanations.ipynb` | Complete |
 | Fraud investigation API (FastAPI) | Complete |
@@ -48,7 +48,7 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 │   ├── preprocessing/     # Frozen preprocessing artifacts and schema metadata
 │   ├── trained/           # Champion model, metadata, and manifest
 │   └── investigation/     # TF-IDF retrieval artifacts
-├── notebooks/             # EDA, data wrangling, preprocessing, feature engineering, modeling, investigation, and XAI
+├── notebooks/             # Exploratory analysis, business understanding, data preparation, modeling, investigation, and XAI
 ├── reports/               # Generated investigation and XAI reports
 ├── results/               # Model, retrieval, assistant, and XAI outputs
 ├── frontend/              # Standalone Streamlit frontend and API client
