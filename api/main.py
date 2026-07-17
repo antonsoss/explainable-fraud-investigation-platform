@@ -65,6 +65,24 @@ def xai_service() -> XAIService:
 
 
 def required_artifacts(project_root: Path) -> list[Path]:
+    """Return every persisted file consumed by the running API."""
+    preprocessing_names = [
+        "high_missing_features.pkl",
+        "imputed_numeric_features.pkl",
+        "imputed_categorical_features.pkl",
+        "median_imputer.pkl",
+        "mode_imputer.pkl",
+        "low_information_features.pkl",
+        "high_cardinality_features.pkl",
+        "low_cardinality_features.pkl",
+        "frequency_maps.pkl",
+        "onehot_encoder.pkl",
+        "encoded_feature_names.pkl",
+        "scaled_feature_names.pkl",
+        "robust_scaler.pkl",
+        "correlated_features_removed.pkl",
+        "selected_features.pkl",
+    ]
     xai_figure_names = [
         "shap_global_bar.png",
         "shap_global_beeswarm.png",
@@ -81,16 +99,25 @@ def required_artifacts(project_root: Path) -> list[Path]:
         "lime_3541077.png",
         "lime_3551357.png",
     ]
+    trained_model_dir = project_root / "models" / "trained"
+    preprocessing_dir = project_root / "models" / "preprocessing"
+    model_results_dir = project_root / "results" / "model_comparison"
+    xai_results_dir = project_root / "results" / "xai"
     required = [
-        project_root / "models" / "trained" / "champion_manifest.json",
-        project_root / "models" / "preprocessing" / "selected_features.pkl",
-        project_root / "results" / "xai" / "xai_metadata.json",
-        project_root / "results" / "xai" / "shap_global_importance.csv",
-        project_root / "results" / "xai" / "local_shap_values.parquet",
-        project_root / "results" / "xai" / "local_lime_values.parquet",
+        trained_model_dir / "champion_manifest.json",
+        trained_model_dir / "xgboost_tuned.joblib",
+        trained_model_dir / "xgboost_tuned_metadata.json",
+        model_results_dir / "validation_model_comparison.csv",
+        xai_results_dir / "xai_metadata.json",
+        xai_results_dir / "shap_global_importance.csv",
+        xai_results_dir / "local_shap_values.parquet",
+        xai_results_dir / "local_lime_values.parquet",
+        xai_results_dir / "lime_case_fidelity.csv",
+        xai_results_dir / "shap_lime_comparison.csv",
     ]
+    required.extend(preprocessing_dir / filename for filename in preprocessing_names)
     required.extend(
-        project_root / "results" / "xai" / "figures" / filename
+        xai_results_dir / "figures" / filename
         for filename in xai_figure_names
     )
     return required

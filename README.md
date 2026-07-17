@@ -4,7 +4,7 @@ An MIA 5100 machine learning project for detecting fraudulent transactions and s
 
 ## Overview
 
-The project uses the [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection/data) to compare classifiers under severe class imbalance. The workflow emphasizes chronological evaluation, training-only preprocessing, precision-recall analysis, operational threshold selection, post-hoc explanation, and human review.
+The project uses the [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection) to compare classifiers under severe class imbalance. The workflow emphasizes chronological evaluation, training-only preprocessing, precision-recall analysis, operational threshold selection, post-hoc explanation, and human review.
 
 Notebooks 01–03 form the MIA 5100 machine learning core. Notebook 04 adds post-hoc SHAP and LIME analysis aligned with the XAI material from MIA 5126; it does not alter the frozen model or threshold. The application uses a standalone FastAPI backend and a Streamlit frontend connected only through HTTP/JSON.
 
@@ -69,7 +69,7 @@ On macOS, XGBoost also requires:
 brew install libomp
 ```
 
-Download the competition files from Kaggle and place them in `data/raw/`. Run Notebooks 01–04 in numerical order. Notebook 04 produces the SHAP and LIME artifacts consumed by the application.
+Download the [IEEE-CIS Fraud Detection competition files](https://www.kaggle.com/competitions/ieee-fraud-detection) and place them in `data/raw/`. Run Notebooks 01–04 in numerical order. Notebook 04 produces the SHAP and LIME artifacts consumed by the application.
 
 ```bash
 jupyter notebook notebooks/04_Post_Hoc_XAI_SHAP_LIME.ipynb

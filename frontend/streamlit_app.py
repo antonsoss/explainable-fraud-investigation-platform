@@ -21,6 +21,7 @@ from frontend.api_client import FraudApiClient, FraudApiError
 DEFAULT_API_URL = os.getenv(
     "FRAUD_API_URL", "http://127.0.0.1:8000/api/v1"
 )
+EXAMPLE_CSV_PATH = PROJECT_ROOT / "examples" / "sample_merged_transactions.csv"
 
 st.set_page_config(
     page_title="Fraud Investigation Platform",
@@ -63,7 +64,7 @@ def load_artifact(api_url: str, path: str) -> bytes:
 
 
 def render_overview(api_url: str) -> None:
-    st.title("Fraud investigation overview")
+    st.title("Overview")
     st.caption(
         "Frozen later-period results from the tuned XGBoost model. "
         "The application does not retrain or retune the model."
@@ -117,10 +118,11 @@ def render_overview(api_url: str) -> None:
 
 
 def render_explanations(api_url: str) -> None:
-    st.title("Model explanations")
+    st.title("Explainable AI (XAI)")
     st.caption(
-        "Post-hoc analysis of the frozen tuned XGBoost model. Notebook 04 used the "
-        "final test set for reporting only; it did not change the model or threshold."
+        "SHAP and LIME explain how the frozen XGBoost model produces fraud-risk "
+        "scores globally and for representative transactions. These explanations "
+        "describe model behavior; they do not establish causality."
     )
 
     xai = load_xai(api_url)
@@ -166,7 +168,11 @@ def render_explanations(api_url: str) -> None:
             width="stretch",
         )
 
-    st.subheader("Leading global features")
+    st.subheader("Top Global Features by Mean Absolute SHAP")
+    st.caption(
+        "Features are ranked by their average absolute contribution to the model's "
+        "fraud-risk score across the fixed 1,000-transaction reporting sample."
+    )
     importance = dataframe_from_records(xai["top_global_features"])
     importance = importance.rename(columns={
         "feature": "Feature",
@@ -227,10 +233,12 @@ def render_explanations(api_url: str) -> None:
     st.dataframe(fidelity, hide_index=True, width="stretch")
     st.caption(lime_summary["warning"])
 
-    st.subheader("Representative local explanations")
+    st.subheader("Individual Explanations for Selected Test Transactions")
     st.caption(
-        "Notebook 04 deterministically selected one median-risk test case from "
-        "each confusion-matrix outcome. Ground-truth outcomes are not exposed here."
+        "Four transactions were selected: one near the median model score in each "
+        "confusion-matrix group (true positive, false positive, false negative, and "
+        "true negative). Select a transaction to compare its SHAP and LIME evidence; "
+        "the app does not display its ground-truth outcome."
     )
     transaction_ids = fidelity["Transaction ID"].astype("int64").tolist()
     transaction_id = st.selectbox(
@@ -287,7 +295,10 @@ def render_explanations(api_url: str) -> None:
         )
         st.image(
             load_artifact(api_url, lime_evidence["figure"]),
-            caption="Sparse local surrogate around this transaction",
+            caption=(
+                "Top feature weights from LIME's simplified approximation of the "
+                "XGBoost score for this transaction"
+            ),
             width="stretch",
         )
         contributions = dataframe_from_records(lime_evidence["contributions"])
@@ -315,12 +326,25 @@ def render_explanations(api_url: str) -> None:
 
 
 def render_scoring(api_url: str) -> None:
-    st.title("Score merged raw transactions")
+    st.title("Fraud Risk Scoring")
     st.caption(
-        "Upload up to 100 merged IEEE-CIS transaction and identity records. "
-        "The CSV must contain the same raw schema used by Notebook 02: "
-        "Data Wrangling, Preprocessing & Feature Engineering."
+        "Upload up to 100 merged transaction and identity records from the "
+        "[IEEE-CIS Fraud Detection dataset]"
+        "(https://www.kaggle.com/competitions/ieee-fraud-detection). "
+        "The CSV must contain the same merged raw schema used during Data "
+        "Wrangling, Preprocessing & Feature Engineering."
     )
+    if EXAMPLE_CSV_PATH.exists():
+        st.download_button(
+            "Download example CSV",
+            data=EXAMPLE_CSV_PATH.read_bytes(),
+            file_name=EXAMPLE_CSV_PATH.name,
+            mime="text/csv",
+            help="Download a correctly structured sample file for fraud scoring.",
+        )
+    else:
+        st.warning("The example scoring CSV is currently unavailable.")
+
     uploaded = st.file_uploader("Merged transaction CSV", type=["csv"])
     if uploaded is None:
         st.info(
@@ -347,23 +371,187 @@ def render_scoring(api_url: str) -> None:
         st.caption(result["score_semantics"])
 
 
-def render_methodology(api_url: str) -> None:
-    st.title("Methodology and responsible use")
+def render_about(api_url: str) -> None:
+    st.title("About")
+    st.markdown("## Explainable Fraud Detection and Investigation Platform")
+    identity_columns = st.columns(3)
+    identity_columns[0].markdown("**Author**  \nAntonio Sosa")
+    identity_columns[1].markdown("**University**  \nUniversity of Ottawa")
+    identity_columns[2].markdown(
+        "**Course**  \nMIA 5100 — Foundations and Applications of Machine Learning"
+    )
+
+    st.markdown(
+        "This project uses the [IEEE-CIS Fraud Detection dataset]"
+        "(https://www.kaggle.com/competitions/ieee-fraud-detection) to develop and "
+        "compare machine-learning models for fraud detection. The selected XGBoost "
+        "model scores transaction risk, while SHAP and LIME help explain its "
+        "behavior. The platform is designed to support, not replace, human review."
+    )
     model = FraudApiClient(api_url).model()
 
-    st.subheader("System boundary")
-    st.code(
-        "Notebooks → frozen artifacts → FastAPI backend → HTTP/JSON → Streamlit frontend",
-        language=None,
+    st.subheader("System Architecture")
+    architecture_diagram = r"""
+        digraph FraudPlatform {
+            rankdir=TB;
+            graph [
+                bgcolor="transparent",
+                pad="0.25",
+                nodesep="0.65",
+                ranksep="0.55",
+                fontname="Arial"
+            ];
+            node [
+                shape=box,
+                style="rounded,filled",
+                color="#4B5563",
+                fillcolor="#262730",
+                fontcolor="white",
+                fontname="Arial",
+                fontsize=11,
+                margin="0.18,0.12"
+            ];
+            edge [
+                color="#9CA3AF",
+                fontcolor="#D1D5DB",
+                fontname="Arial",
+                fontsize=9,
+                arrowsize=0.7
+            ];
+
+            subgraph cluster_offline {
+                label="OFFLINE MODEL DEVELOPMENT";
+                color="#6B7280";
+                fontcolor="#9CA3AF";
+                style="rounded,dashed";
+
+                raw [
+                    label="IEEE-CIS raw dataset",
+                    URL="https://www.kaggle.com/competitions/ieee-fraud-detection",
+                    target="_blank",
+                    tooltip="Open the IEEE-CIS Fraud Detection dataset on Kaggle",
+                    shape=note,
+                    style="filled",
+                    color="#3B82F6",
+                    fillcolor="#1F4E79",
+                    penwidth=3
+                ];
+                eda [
+                    label="01_Exploratory_Data_Analysis_\nBusiness_Understanding.ipynb",
+                    shape=note,
+                    style="filled",
+                    color="#F37626",
+                    fillcolor="#30323D",
+                    penwidth=3
+                ];
+                preparation [
+                    label="02_Data_Wrangling_Preprocessing_\nFeature_Engineering.ipynb",
+                    shape=note,
+                    style="filled",
+                    color="#F37626",
+                    fillcolor="#30323D",
+                    penwidth=3
+                ];
+                modeling [
+                    label="03_ML_Model_Selection_\nTuning_Evaluation.ipynb",
+                    shape=note,
+                    style="filled",
+                    color="#F37626",
+                    fillcolor="#30323D",
+                    penwidth=3
+                ];
+                xai [
+                    label="04_Post_Hoc_XAI_SHAP_LIME.ipynb",
+                    shape=note,
+                    style="filled",
+                    color="#F37626",
+                    fillcolor="#30323D",
+                    penwidth=3
+                ];
+                preprocessing_artifacts [
+                    label="PREPROCESSING ARTIFACTS\nmedian_imputer.pkl • mode_imputer.pkl\nfrequency_maps.pkl • onehot_encoder.pkl\nrobust_scaler.pkl • selected_features.pkl\n+ schema and feature-list .pkl files",
+                    fillcolor="#4C1D95"
+                ];
+                model_artifacts [
+                    label="CHAMPION MODEL + METRICS\nchampion_manifest.json\nxgboost_tuned.joblib\nxgboost_tuned_metadata.json\nvalidation_model_comparison.csv",
+                    fillcolor="#5B2C6F"
+                ];
+                xai_artifacts [
+                    label="XAI ARTIFACTS\nxai_metadata.json • shap_global_importance.csv\nlocal_shap_values.parquet • local_lime_values.parquet\nlime_case_fidelity.csv • shap_lime_comparison.csv\nSHAP/LIME figure PNGs",
+                    fillcolor="#6B21A8"
+                ];
+
+                raw -> eda;
+                eda -> preparation;
+                preparation -> modeling;
+                modeling -> xai;
+                preparation -> preprocessing_artifacts [label="fitted preprocessing"];
+                modeling -> model_artifacts [label="champion model + metrics"];
+                xai -> xai_artifacts [label="SHAP + LIME"];
+
+                {
+                    rank=same;
+                    preprocessing_artifacts;
+                    model_artifacts;
+                    xai_artifacts;
+                }
+            }
+
+            subgraph cluster_runtime {
+                label="RUN-TIME APPLICATION";
+                color="#6B7280";
+                fontcolor="#9CA3AF";
+                style="rounded,dashed";
+
+                upload [
+                    label="CSV\nCSV of raw transaction(s)\nfor fraud scoring",
+                    shape=note,
+                    style="filled",
+                    color="#16A34A",
+                    fillcolor="#14532D",
+                    penwidth=3
+                ];
+                api [
+                    label="FastAPI backend\nPreprocessing • scoring • metrics • XAI",
+                    fillcolor="#7F1D1D"
+                ];
+                app [
+                    label="Streamlit frontend\nOverview • risk scoring • XAI • About",
+                    fillcolor="#1F4E79"
+                ];
+                reviewer [
+                    label="Human reviewer\nInterprets scores and evidence",
+                    fillcolor="#14532D"
+                ];
+
+                upload -> app [label="score new data"];
+                api -> app [
+                    dir=both,
+                    label="HTTP/JSON\nrequests + responses"
+                ];
+                app -> reviewer [label="decision support"];
+            }
+
+            preprocessing_artifacts -> api [label="preprocessing"];
+            model_artifacts -> api [label="scoring + metrics"];
+            xai_artifacts -> api [label="explanations"];
+        }
+    """
+    st.graphviz_chart(
+        architecture_diagram,
+        width="stretch",
+        height=900,
     )
-    st.write(
-        "Notebooks 01–03 provide the course-aligned machine learning workflow. "
-        "Notebook 04 adds the MIA 5126 post-hoc SHAP and LIME extension without "
-        "changing the model. The API owns the frozen model, evaluation, and XAI "
-        "artifacts; the frontend is presentation-only."
+    st.caption(
+        "Orange-bordered boxes represent offline analytical stages. Model development and "
+        "XAI run offline. The deployed application never retrains the model: "
+        "FastAPI loads the frozen preprocessing, champion-model, and XAI artifact "
+        "categories, while Streamlit communicates with it only "
+        "through HTTP/JSON. The CSV upload is optional and is used only to score new "
+        "transactions; Overview and XAI use saved artifacts."
     )
 
-    st.subheader("Frozen model contract")
+    st.subheader("Deployed trained ML model")
     st.json({
         "model": model["model_name"],
         "features": model["feature_count"],
@@ -388,17 +576,17 @@ def render_methodology(api_url: str) -> None:
 """
     )
 
+    st.subheader("AI assistance disclosure")
+    st.info(
+        "I used AI as an engineering productivity tool for brainstorming, "
+        "troubleshooting, and documentation, while remaining responsible for all "
+        "technical decisions, implementation, testing, validation, and conclusions."
+    )
 
-api_url = st.sidebar.text_input("Fraud API URL", value=DEFAULT_API_URL)
-page = st.sidebar.radio(
-    "Navigation",
-    [
-        "Overview",
-        "Model explanations",
-        "Score transactions",
-        "Methodology",
-    ],
-)
+
+st.sidebar.markdown("### System status")
+with st.sidebar.expander("API connection", expanded=False):
+    api_url = st.text_input("Fraud API URL", value=DEFAULT_API_URL)
 
 try:
     health = load_health(api_url)
@@ -409,19 +597,58 @@ except FraudApiError as error:
     st.stop()
 
 if health["artifacts_ready"]:
-    st.sidebar.success("API ready")
+    st.sidebar.markdown("🟢 **API ready**")
 else:
-    st.sidebar.error("API artifacts missing")
-    st.sidebar.write(health["missing_artifacts"])
+    st.sidebar.markdown("🔴 **API artifacts missing**")
+    with st.sidebar.expander("Missing artifacts"):
+        st.write(health["missing_artifacts"])
+
+
+def overview_page() -> None:
+    render_overview(api_url)
+
+
+def scoring_page() -> None:
+    render_scoring(api_url)
+
+
+def xai_page() -> None:
+    render_explanations(api_url)
+
+
+def about_page() -> None:
+    render_about(api_url)
+
+
+pages = [
+    st.Page(
+        overview_page,
+        title="Overview",
+        icon=":material/dashboard:",
+        url_path="overview",
+        default=True,
+    ),
+    st.Page(
+        scoring_page,
+        title="Fraud Risk Scoring",
+        icon=":material/security:",
+        url_path="fraud-risk-scoring",
+    ),
+    st.Page(
+        xai_page,
+        title="XAI",
+        icon=":material/psychology:",
+        url_path="xai",
+    ),
+    st.Page(
+        about_page,
+        title="About",
+        icon=":material/info:",
+        url_path="about",
+    ),
+]
 
 try:
-    if page == "Overview":
-        render_overview(api_url)
-    elif page == "Model explanations":
-        render_explanations(api_url)
-    elif page == "Score transactions":
-        render_scoring(api_url)
-    else:
-        render_methodology(api_url)
+    st.navigation(pages, position="sidebar", expanded=True).run()
 except FraudApiError as error:
     st.error(str(error))

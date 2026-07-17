@@ -14,7 +14,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 try:
     from fastapi.testclient import TestClient
 
-    from api.main import app
+    from api.main import app, required_artifacts
 except ImportError as error:  # pragma: no cover - dependency guard
     TestClient = None
     IMPORT_ERROR = error
@@ -36,6 +36,75 @@ class FraudApiContractTest(unittest.TestCase):
         self.assertEqual(payload["version"], "1.1.0")
         self.assertTrue(payload["artifacts_ready"])
         self.assertEqual(payload["missing_artifacts"], [])
+
+    def test_health_inventory_covers_every_runtime_artifact_category(self):
+        inventory = {
+            str(path.relative_to(PROJECT_ROOT))
+            for path in required_artifacts(PROJECT_ROOT)
+        }
+        preprocessing_files = {
+            "high_missing_features.pkl",
+            "imputed_numeric_features.pkl",
+            "imputed_categorical_features.pkl",
+            "median_imputer.pkl",
+            "mode_imputer.pkl",
+            "low_information_features.pkl",
+            "high_cardinality_features.pkl",
+            "low_cardinality_features.pkl",
+            "frequency_maps.pkl",
+            "onehot_encoder.pkl",
+            "encoded_feature_names.pkl",
+            "scaled_feature_names.pkl",
+            "robust_scaler.pkl",
+            "correlated_features_removed.pkl",
+            "selected_features.pkl",
+        }
+        expected_preprocessing = {
+            f"models/preprocessing/{filename}"
+            for filename in preprocessing_files
+        }
+        expected_model_and_metrics = {
+            "models/trained/champion_manifest.json",
+            "models/trained/xgboost_tuned.joblib",
+            "models/trained/xgboost_tuned_metadata.json",
+            "results/model_comparison/validation_model_comparison.csv",
+        }
+        expected_xai_data = {
+            "results/xai/xai_metadata.json",
+            "results/xai/shap_global_importance.csv",
+            "results/xai/local_shap_values.parquet",
+            "results/xai/local_lime_values.parquet",
+            "results/xai/lime_case_fidelity.csv",
+            "results/xai/shap_lime_comparison.csv",
+        }
+        xai_figure_files = {
+            "shap_global_bar.png",
+            "shap_global_beeswarm.png",
+            "shap_vs_native_importance.png",
+            "shap_dependence_TransactionDT.png",
+            "shap_dependence_C13.png",
+            "shap_dependence_C1.png",
+            "shap_waterfall_3519397.png",
+            "shap_waterfall_3524909.png",
+            "shap_waterfall_3541077.png",
+            "shap_waterfall_3551357.png",
+            "lime_3519397.png",
+            "lime_3524909.png",
+            "lime_3541077.png",
+            "lime_3551357.png",
+        }
+        expected_xai_figures = {
+            f"results/xai/figures/{filename}"
+            for filename in xai_figure_files
+        }
+        expected_inventory = (
+            expected_preprocessing
+            | expected_model_and_metrics
+            | expected_xai_data
+            | expected_xai_figures
+        )
+
+        self.assertEqual(inventory, expected_inventory)
 
     def test_model_contract_uses_saved_threshold(self):
         response = self.client.get("/api/v1/model")
@@ -106,7 +175,7 @@ class FraudApiContractTest(unittest.TestCase):
         transaction_file = raw_dir / "train_transaction.csv"
         identity_file = raw_dir / "train_identity.csv"
         if not transaction_file.exists() or not identity_file.exists():
-            self.skipTest("Local IEEE-CIS raw data is required for HTTP scoring.")
+            self.skipTest("Local competition data files are required for HTTP scoring.")
 
         transaction = pd.read_csv(transaction_file, nrows=1)
         transaction_id = int(transaction.loc[0, "TransactionID"])

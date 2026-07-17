@@ -23,7 +23,11 @@ class RawTransactionBatch(StrictModel):
     transactions: list[dict[str, Any]] = Field(
         ...,
         min_length=1,
-        description="Merged IEEE-CIS transaction and identity records.",
+        description=(
+            "Merged transaction and identity records from the "
+            "[IEEE-CIS Fraud Detection dataset]"
+            "(https://www.kaggle.com/competitions/ieee-fraud-detection)."
+        ),
     )
 
     @field_validator("transactions")

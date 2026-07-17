@@ -31,7 +31,7 @@
     "features_per_case": 20,
     "mean_local_fidelity_r2": 0.18843880626887766,
     "minimum_local_fidelity_r2": 0.10544439616191215,
-    "warning": "LIME explains a fitted local surrogate. Review local R2 before using its weights as supporting evidence."
+    "warning": "LIME approximates the XGBoost score for one transaction. When local fidelity R² is low, its feature weights may not accurately represent the model and should be treated as secondary evidence."
   },
   "representative_transaction_ids": [
     3519397,
