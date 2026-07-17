@@ -426,7 +426,8 @@ def render_scoring(api_url: str) -> None:
     st.title("Score merged raw transactions")
     st.caption(
         "Upload up to 100 merged IEEE-CIS transaction and identity records. "
-        "The CSV must contain the same raw schema used by Notebook 02."
+        "The CSV must contain the same raw schema used by Notebook 02: "
+        "Data Wrangling, Preprocessing & Feature Engineering."
     )
     uploaded = st.file_uploader("Merged transaction CSV", type=["csv"])
     if uploaded is None:

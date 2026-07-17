@@ -10,7 +10,7 @@ Notebooks 01–03 form the MIA 5100 machine learning core. Notebook 04 and the i
 
 ## Current results
 
-Transactions are ordered by `TransactionDT`. Training contains 413,378 transactions from elapsed days 1.0–120.8, validation contains 88,581 transactions from days 120.8–152.2, and the final test contains 88,581 transactions from days 152.2–183.0. Their fraud rates are 3.52%, 3.43%, and 3.48%, respectively. Preprocessing produces 359 model features, and XGBoost tuned with expanding-window cross-validation is the champion.
+Transactions are ordered by `TransactionDT`. Training contains 413,378 transactions from elapsed days 1.0–120.8, validation contains 88,581 transactions from days 120.8–152.2, and the final test contains 88,581 transactions from days 152.2–183.0. Their fraud rates are 3.52%, 3.43%, and 3.48%, respectively. Data wrangling, preprocessing, and feature engineering produce 359 model features, and XGBoost tuned with expanding-window cross-validation is the champion.
 
 | Later-period test metric | Result |
 |---|---:|
@@ -32,7 +32,7 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 | Notebook | Status |
 |---|:---:|
 | `01_EDA_Business_Understanding.ipynb` | Complete |
-| `02_Data_Preprocessing_Feature_Engineering.ipynb` | Complete |
+| `02_Data_Wrangling_Preprocessing_Feature_Engineering.ipynb` | Complete |
 | `03_Model_Development_Comparison.ipynb` | Complete |
 | `04_Fraud_Investigation_AI_Assistant.ipynb` | Complete |
 | `05_XAI_Model_Explanations.ipynb` | Complete |
@@ -48,7 +48,7 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 │   ├── preprocessing/     # Frozen preprocessing artifacts and schema metadata
 │   ├── trained/           # Champion model, metadata, and manifest
 │   └── investigation/     # TF-IDF retrieval artifacts
-├── notebooks/             # EDA, preprocessing, modeling, investigation, and XAI
+├── notebooks/             # EDA, data wrangling, preprocessing, feature engineering, modeling, investigation, and XAI
 ├── reports/               # Generated investigation and XAI reports
 ├── results/               # Model, retrieval, assistant, and XAI outputs
 ├── frontend/              # Standalone Streamlit frontend and API client

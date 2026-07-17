@@ -20,7 +20,10 @@ SECONDS_PER_HOUR = 60 * 60
 
 
 def engineer_transaction_features(raw: pd.DataFrame) -> pd.DataFrame:
-    """Create the deterministic row-level features used by Notebook 02."""
+    """Create the deterministic row-level features.
+
+    These match Notebook 02: Data Wrangling, Preprocessing & Feature Engineering.
+    """
     required = {
         "TransactionAmt", "TransactionDT", "P_emaildomain", "R_emaildomain",
         "card1", "card2", "DeviceType", "DeviceInfo",
@@ -61,7 +64,10 @@ def engineer_transaction_features(raw: pd.DataFrame) -> pd.DataFrame:
 
 
 class FraudPreprocessor:
-    """Apply the frozen Notebook 02 transformations to raw merged records."""
+    """Apply the frozen raw-record transformations.
+
+    These come from Notebook 02: Data Wrangling, Preprocessing & Feature Engineering.
+    """
 
     def __init__(self, artifact_dir: str | Path):
         self.artifact_dir = Path(artifact_dir)
