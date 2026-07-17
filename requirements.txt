@@ -20,9 +20,6 @@ uvicorn[standard]>=0.34,<1.0
 requests>=2.32,<3.0
 streamlit>=1.45,<2.0
 
-# Optional model-generated investigation summaries
-openai>=1.66,<3.0
-
 # Notebook environment
 jupyter>=1.1,<2.0
 ipykernel>=6.29,<8.0

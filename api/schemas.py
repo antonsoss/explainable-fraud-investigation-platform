@@ -47,12 +47,3 @@ class PredictionResponse(StrictModel):
     model_name: str
     score_semantics: str
     predictions: list[PredictionResult]
-
-
-class InvestigationRequest(StrictModel):
-    transaction_id: int = Field(..., gt=0)
-
-
-class SimilarTransactionsRequest(InvestigationRequest):
-    top_n: int = Field(5, ge=1, le=20)
-

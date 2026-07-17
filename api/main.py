@@ -12,12 +12,9 @@ from fastapi.staticfiles import StaticFiles
 from api.config import Settings
 from api.schemas import (
     HealthResponse,
-    InvestigationRequest,
     PredictionResponse,
     RawTransactionBatch,
-    SimilarTransactionsRequest,
 )
-from api.services.investigation_service import InvestigationService
 from api.services.metrics_service import MetricsService
 from api.services.model_service import ModelService
 from api.services.xai_service import XAIService
@@ -63,11 +60,6 @@ def metrics_service() -> MetricsService:
 
 
 @lru_cache(maxsize=1)
-def investigation_service() -> InvestigationService:
-    return InvestigationService(settings.project_root)
-
-
-@lru_cache(maxsize=1)
 def xai_service() -> XAIService:
     return XAIService(settings.project_root)
 
@@ -92,10 +84,6 @@ def required_artifacts(project_root: Path) -> list[Path]:
     required = [
         project_root / "models" / "trained" / "champion_manifest.json",
         project_root / "models" / "preprocessing" / "selected_features.pkl",
-        project_root / "models" / "investigation" / "tfidf_vectorizer.joblib",
-        project_root / "models" / "investigation" / "validation_case_matrix.npz",
-        project_root / "models" / "investigation" / "validation_case_library.parquet",
-        project_root / "results" / "investigation" / "assistant_summaries.parquet",
         project_root / "results" / "xai" / "xai_metadata.json",
         project_root / "results" / "xai" / "shap_global_importance.csv",
         project_root / "results" / "xai" / "local_shap_values.parquet",
@@ -157,6 +145,16 @@ def xai(top_n: int = 20) -> dict:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 
+@router.get("/xai/{transaction_id}", tags=["Model Explanations"])
+def local_xai(transaction_id: int, top_n: int = 10) -> dict:
+    try:
+        return xai_service().local_explanation(transaction_id, top_n=top_n)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=error.args[0]) from error
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
 @router.post("/predict", response_model=PredictionResponse, tags=["Scoring"])
 def predict(payload: RawTransactionBatch) -> dict:
     try:
@@ -165,46 +163,6 @@ def predict(payload: RawTransactionBatch) -> dict:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-
-
-@router.get("/investigations", tags=["Investigation"])
-def investigations() -> dict:
-    try:
-        return {"transactions": investigation_service().list_demo_cases()}
-    except FileNotFoundError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
-
-
-@router.post("/similar-transactions", tags=["Investigation"])
-def similar_transactions(payload: SimilarTransactionsRequest) -> dict:
-    try:
-        return {
-            "query_transaction_id": payload.transaction_id,
-            "neighbors": investigation_service().similar_cases(
-                payload.transaction_id, payload.top_n
-            ),
-            "warning": (
-                "Similarity is descriptive evidence and is not a calibrated fraud probability."
-            ),
-        }
-    except KeyError as error:
-        raise HTTPException(status_code=404, detail=error.args[0]) from error
-    except FileNotFoundError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
-
-
-@router.post("/investigate", tags=["Investigation"])
-def investigate(payload: InvestigationRequest) -> dict:
-    try:
-        result = investigation_service().investigate(payload.transaction_id)
-        result["model_explanation"] = xai_service().local_explanation(
-            payload.transaction_id
-        )
-        return result
-    except KeyError as error:
-        raise HTTPException(status_code=404, detail=error.args[0]) from error
-    except FileNotFoundError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 app.include_router(router)

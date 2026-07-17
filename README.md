@@ -4,9 +4,9 @@ An MIA 5100 machine learning project for detecting fraudulent transactions and s
 
 ## Overview
 
-The project uses the [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection/data) to compare classifiers under severe class imbalance. The workflow emphasizes chronological evaluation, training-only preprocessing, precision-recall analysis, operational threshold selection, model-native global interpretation, labeled reference-case retrieval, and human review.
+The project uses the [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection/data) to compare classifiers under severe class imbalance. The workflow emphasizes chronological evaluation, training-only preprocessing, precision-recall analysis, operational threshold selection, post-hoc explanation, and human review.
 
-Notebooks 01–03 form the MIA 5100 machine learning core. Notebook 04 and the implemented application layer are applied investigation extensions. Notebook 05 adds post-hoc SHAP and LIME analysis aligned with the XAI material from MIA 5126; it does not alter the frozen model or threshold. The final platform uses a standalone FastAPI backend and a Streamlit frontend connected only through HTTP/JSON.
+Notebooks 01–03 form the MIA 5100 machine learning core. Notebook 04 adds post-hoc SHAP and LIME analysis aligned with the XAI material from MIA 5126; it does not alter the frozen model or threshold. The application uses a standalone FastAPI backend and a Streamlit frontend connected only through HTTP/JSON.
 
 ## Current results
 
@@ -23,9 +23,7 @@ Transactions are ordered by `TransactionDT`. Training contains 413,378 transacti
 
 The validation average precision was 0.5904. Its decline to 0.5213 on the later test period indicates temporal generalization loss and is more conservative than the previous random-split estimate. The 0.2757 threshold was selected on validation data by maximizing F2. It generated 5,829 test alerts: 1,899 true positives and 3,930 false positives, while 1,184 fraud cases were missed. Model outputs are uncalibrated fraud risk scores, not fraud probabilities.
 
-The investigation layer evaluates TF-IDF retrieval on 500 balanced held-out queries. Fraud queries retrieved 15.8% fraud-labeled neighbors versus 3.4% reference prevalence, a 4.59× lift. Retrieval remains descriptive evidence and does not explain or prove an individual outcome.
-
-For the XAI extension, Tree SHAP was computed with a fixed 100-row training background and a fixed 1,000-row test reporting sample. `TransactionDT` ranked first by mean absolute SHAP, and the SHAP/native-gain rank correlation was 0.621. SHAP reconstructed model scores within a maximum global error of 3.83×10⁻⁷. LIME was evaluated on the same four representative cases, but its mean local fidelity was only R²=0.188 and its median top-10 feature overlap with SHAP was 11.1%; the platform therefore presents LIME as secondary evidence only. These explanations describe model behavior, not causal reasons for fraud.
+For the XAI extension, Tree SHAP was computed with a fixed 100-row training background and a fixed 1,000-row test reporting sample. `TransactionDT` ranked first by mean absolute SHAP, and the SHAP/native-gain rank correlation was 0.621. SHAP reconstructed model scores within a maximum global error of 3.83×10⁻⁷. LIME was evaluated on four representative test outcomes selected from the saved model predictions, but its mean local fidelity was only R²=0.188 and its median top-10 feature overlap with SHAP was 11.1%; the platform therefore presents LIME as secondary evidence only. These explanations describe model behavior, not causal reasons for fraud.
 
 ## Workflow
 
@@ -34,8 +32,7 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 | `01_Exploratory_Data_Analysis_Business_Understanding.ipynb` | Complete |
 | `02_Data_Wrangling_Preprocessing_Feature_Engineering.ipynb` | Complete |
 | `03_ML_Model_Selection_Tuning_Evaluation.ipynb` | Complete |
-| `04_Fraud_Investigation_AI_Assistant.ipynb` | Complete |
-| `05_XAI_Model_Explanations.ipynb` | Complete |
+| `04_Post_Hoc_XAI_SHAP_LIME.ipynb` | Complete |
 | Fraud investigation API (FastAPI) | Complete |
 | Fraud investigation frontend (Streamlit) | Complete |
 
@@ -46,11 +43,10 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 ├── data/                   # Raw and processed data (not tracked)
 ├── models/
 │   ├── preprocessing/     # Frozen preprocessing artifacts and schema metadata
-│   ├── trained/           # Champion model, metadata, and manifest
-│   └── investigation/     # TF-IDF retrieval artifacts
-├── notebooks/             # Exploratory analysis, business understanding, data preparation, modeling, investigation, and XAI
-├── reports/               # Generated investigation and XAI reports
-├── results/               # Model, retrieval, assistant, and XAI outputs
+│   └── trained/           # Champion model, metadata, and manifest
+├── notebooks/             # Exploratory analysis, data preparation, modeling, and XAI
+├── reports/               # Generated XAI report
+├── results/               # Model-comparison and XAI outputs
 ├── frontend/              # Standalone Streamlit frontend and API client
 ├── src/                   # Reusable raw-to-score pipeline
 ├── tests/                 # Pipeline integration and API contract tests
@@ -73,10 +69,10 @@ On macOS, XGBoost also requires:
 brew install libomp
 ```
 
-Download the competition files from Kaggle and place them in `data/raw/`. Run Notebooks 01–05 in numerical order. Notebook 05 produces the SHAP and LIME artifacts consumed by the application.
+Download the competition files from Kaggle and place them in `data/raw/`. Run Notebooks 01–04 in numerical order. Notebook 04 produces the SHAP and LIME artifacts consumed by the application.
 
 ```bash
-jupyter notebook notebooks/05_XAI_Model_Explanations.ipynb
+jupyter notebook notebooks/04_Post_Hoc_XAI_SHAP_LIME.ipynb
 ```
 
 The API and frontend consume the precomputed XAI files and do not import SHAP or LIME at runtime.
@@ -105,12 +101,10 @@ The frontend uses `http://127.0.0.1:8000/api/v1` by default. Set `FRAUD_API_URL`
 | `GET` | `/api/v1/model` | Read the frozen model contract |
 | `GET` | `/api/v1/metrics` | Read persisted evaluation results |
 | `GET` | `/api/v1/xai` | Read global XAI results and reliability diagnostics |
+| `GET` | `/api/v1/xai/{transaction_id}` | Read a representative local SHAP/LIME explanation |
 | `POST` | `/api/v1/predict` | Score merged raw transaction records |
-| `GET` | `/api/v1/investigations` | List sanitized demonstration cases |
-| `POST` | `/api/v1/similar-transactions` | Retrieve labeled validation references |
-| `POST` | `/api/v1/investigate` | Return evidence and a grounded summary |
 
-The frontend does not import model code or load joblib artifacts. The API owns preprocessing, scoring, retrieval, explanation, and assistant evidence. Demonstration investigations intentionally withhold the query transaction's individual ground-truth label from both the assistant and explanation responses.
+The frontend does not import model code or load joblib artifacts. The API owns preprocessing, scoring, saved evaluation metrics, and XAI evidence.
 
 For the **Score merged raw transactions** page, upload `examples/sample_merged_transactions.csv`. It contains three synthetic records with the complete 433-column merged raw schema and no ground-truth label. Regenerate it after a schema change with:
 
@@ -137,19 +131,9 @@ Run the pipeline and API contract tests with:
 python -m unittest discover -s tests -v
 ```
 
-## Optional investigation summaries
-
-The core investigation workflow and deterministic summaries require no API key. The OpenAI SDK is installed with the project environment but remains disabled by default. To enable optional OpenAI-generated summaries:
-
-```bash
-export OPENAI_API_KEY="your-key"
-```
-
-Then set `RUN_OPENAI_LLM = True` in Notebook 04. No transaction evidence is sent unless that switch is enabled. Never commit API keys.
-
 ## Application scope
 
-The final platform integrates saved performance and alert-volume KPIs, global SHAP analysis, transaction-level SHAP and LIME explanations, transaction profiles, labeled reference cases, deterministic summaries, cohort limitations, and human-review controls. It consumes frozen notebook artifacts and does not retrain the model or use the final test set for additional selection. SHAP is the primary local decomposition because additivity was verified; low-fidelity LIME results are visibly marked as secondary. Neither method establishes causality or supports autonomous enforcement.
+The platform integrates saved performance and alert-volume KPIs, global SHAP analysis, representative transaction-level SHAP and LIME explanations, raw-transaction scoring, and human-review boundaries. It consumes frozen notebook artifacts and does not retrain the model or use the final test set for additional selection. SHAP is the primary local decomposition because additivity was verified; low-fidelity LIME results are visibly marked as secondary. Neither method establishes causality or supports autonomous enforcement.
 
 ## AI assistance disclosure
 

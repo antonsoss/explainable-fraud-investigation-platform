@@ -1,2 +1,0 @@
-Queries,Neighbors per query,Reference fraud rate,Fraud-query neighbor fraud rate,Legitimate-query neighbor fraud rate,Fraud-query lift vs reference,Mean similarity,Mean label agreement
-500,5,0.03434145019812375,0.15760000000000002,0.018400000000000003,4.589206311637081,0.7167783372830033,0.5696

@@ -18,7 +18,6 @@ class MetricsService:
         self.project_root = project_root
         self.model_dir = project_root / "models" / "trained"
         self.model_results = project_root / "results" / "model_comparison"
-        self.investigation_results = project_root / "results" / "investigation"
 
     def _metadata(self) -> dict[str, Any]:
         manifest = json.loads(
@@ -53,31 +52,21 @@ class MetricsService:
         validation_comparison = pd.read_csv(
             self.model_results / "validation_model_comparison.csv"
         )
-        outcomes = pd.read_csv(
-            self.investigation_results / "test_outcome_counts.csv"
+        model = self.model_info()
+        test = model["test_metrics"]
+        total = sum(int(test[key]) for key in ["TN", "FP", "FN", "TP"])
+        outcomes = pd.DataFrame(
+            [
+                {"Outcome": "True positive", "Transactions": int(test["TP"])},
+                {"Outcome": "False positive", "Transactions": int(test["FP"])},
+                {"Outcome": "False negative", "Transactions": int(test["FN"])},
+                {"Outcome": "True negative", "Transactions": int(test["TN"])},
+            ]
         )
-        product = pd.read_csv(
-            self.investigation_results / "product_cohort_metrics.csv"
-        )
-        device = pd.read_csv(
-            self.investigation_results / "device_cohort_metrics.csv"
-        )
-        amount = pd.read_csv(
-            self.investigation_results / "amount_cohort_metrics.csv"
-        )
-        retrieval = pd.read_csv(
-            self.investigation_results / "retrieval_evaluation_summary.csv"
-        )
+        outcomes["Share"] = outcomes["Transactions"] / total
 
         return {
-            "model": self.model_info(),
+            "model": model,
             "validation_model_comparison": dataframe_records(validation_comparison),
             "test_outcomes": dataframe_records(outcomes),
-            "cohorts": {
-                "product": dataframe_records(product),
-                "device": dataframe_records(device),
-                "amount": dataframe_records(amount),
-            },
-            "retrieval": dataframe_records(retrieval)[0],
         }
-

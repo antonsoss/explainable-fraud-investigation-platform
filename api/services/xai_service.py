@@ -1,4 +1,4 @@
-"""Serve frozen post-hoc explanation artifacts exported by Notebook 05."""
+"""Serve frozen post-hoc explanation artifacts exported by Notebook 04."""
 
 from __future__ import annotations
 
@@ -113,7 +113,7 @@ class XAIService:
     def local_explanation(
         self, transaction_id: int, top_n: int = 10
     ) -> dict[str, Any]:
-        """Return label-free local explanations for one exported investigation case."""
+        """Return label-free local explanations for one representative test case."""
         transaction_id = int(transaction_id)
         shap_rows = self.local_shap.loc[
             self.local_shap["TransactionID"] == transaction_id
@@ -123,7 +123,7 @@ class XAIService:
         ].sort_values("Rank")
         if shap_rows.empty or lime_rows.empty:
             raise KeyError(
-                f"No Notebook 05 explanation exists for transaction {transaction_id}."
+                f"No Notebook 04 explanation exists for transaction {transaction_id}."
             )
 
         top_n = max(1, min(int(top_n), len(shap_rows)))

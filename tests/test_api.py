@@ -76,43 +76,22 @@ class FraudApiContractTest(unittest.TestCase):
         self.assertEqual(response.headers["content-type"], "image/png")
         self.assertGreater(len(response.content), 1000)
 
-    def test_investigation_view_withholds_query_ground_truth(self):
-        cases_response = self.client.get("/api/v1/investigations")
-        self.assertEqual(cases_response.status_code, 200)
-        cases = cases_response.json()["transactions"]
-        self.assertEqual(len(cases), 4)
-        self.assertNotIn("isFraud", cases[0])
-        self.assertNotIn("Outcome", cases[0])
+    def test_local_xai_is_served_without_ground_truth(self):
+        summary = self.client.get("/api/v1/xai").json()
+        transaction_id = summary["lime_case_fidelity"][0]["transaction_id"]
+        response = self.client.get(f"/api/v1/xai/{transaction_id}")
 
-        response = self.client.post(
-            "/api/v1/investigate",
-            json={"transaction_id": cases[0]["transaction_id"]},
-        )
         self.assertEqual(response.status_code, 200)
-        investigation = response.json()
-        self.assertNotIn("isFraud", investigation["transaction"])
-        self.assertNotIn("Outcome", investigation["transaction"])
-        self.assertEqual(len(investigation["similar_reference_cases"]), 5)
-        self.assertTrue(
-            investigation["assistant_summary"]["automated_checks_pass"]
-        )
-        explanation = investigation["model_explanation"]
-        self.assertEqual(explanation["transaction_id"], cases[0]["transaction_id"])
+        explanation = response.json()
+        self.assertEqual(explanation["transaction_id"], transaction_id)
         self.assertEqual(len(explanation["shap"]["contributions"]), 10)
         self.assertEqual(len(explanation["lime"]["contributions"]), 10)
         self.assertLess(
             explanation["shap"]["maximum_local_reconstruction_error"], 1e-5
         )
-        self.assertIn("Secondary", explanation["lime"]["role"])
         serialized = json.dumps(explanation)
         self.assertNotIn('"Outcome"', serialized)
         self.assertNotIn('"isFraud"', serialized)
-
-    def test_unknown_investigation_transaction_returns_404(self):
-        response = self.client.post(
-            "/api/v1/investigate", json={"transaction_id": 1}
-        )
-        self.assertEqual(response.status_code, 404)
 
     def test_malformed_scoring_request_returns_clear_validation_error(self):
         response = self.client.post(

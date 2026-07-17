@@ -62,6 +62,11 @@ class FraudApiClient:
     def xai(self) -> dict[str, Any]:
         return self._request("GET", "/xai")
 
+    def local_xai(self, transaction_id: int, top_n: int = 10) -> dict[str, Any]:
+        return self._request(
+            "GET", f"/xai/{transaction_id}", params={"top_n": top_n}
+        )
+
     def artifact_bytes(self, path: str) -> bytes:
         """Download a trusted figure path returned by the API."""
         if not path.startswith("/artifacts/xai/"):
@@ -77,23 +82,6 @@ class FraudApiClient:
                 f"Artifact request failed ({response.status_code}): {response.text}"
             )
         return response.content
-
-    def demo_cases(self) -> list[dict[str, Any]]:
-        return self._request("GET", "/investigations")["transactions"]
-
-    def investigate(self, transaction_id: int) -> dict[str, Any]:
-        return self._request(
-            "POST", "/investigate", json={"transaction_id": transaction_id}
-        )
-
-    def similar_transactions(
-        self, transaction_id: int, top_n: int = 5
-    ) -> dict[str, Any]:
-        return self._request(
-            "POST",
-            "/similar-transactions",
-            json={"transaction_id": transaction_id, "top_n": top_n},
-        )
 
     def predict(self, transactions: list[dict[str, Any]]) -> dict[str, Any]:
         return self._request(

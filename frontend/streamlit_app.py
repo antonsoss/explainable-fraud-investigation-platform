@@ -48,23 +48,18 @@ def load_metrics(api_url: str) -> dict:
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def load_demo_cases(api_url: str) -> list[dict]:
-    return FraudApiClient(api_url).demo_cases()
+def load_xai(api_url: str) -> dict:
+    return FraudApiClient(api_url).xai()
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def load_xai(api_url: str) -> dict:
-    return FraudApiClient(api_url).xai()
+def load_local_xai(api_url: str, transaction_id: int) -> dict:
+    return FraudApiClient(api_url).local_xai(transaction_id)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_artifact(api_url: str, path: str) -> bytes:
     return FraudApiClient(api_url).artifact_bytes(path)
-
-
-@st.cache_data(ttl=300, show_spinner=False)
-def load_investigation(api_url: str, transaction_id: int) -> dict:
-    return FraudApiClient(api_url).investigate(transaction_id)
 
 
 def render_overview(api_url: str) -> None:
@@ -102,44 +97,29 @@ def render_overview(api_url: str) -> None:
     outcomes["Share"] = outcomes["Share"].map(lambda value: f"{value:.2%}")
     st.dataframe(outcomes, hide_index=True, width="stretch")
 
-    st.subheader("Cohort monitoring")
-    cohort_choice = st.radio(
-        "Cohort view", ["Product", "Device", "Amount"], horizontal=True
+    st.subheader("Validation model comparison")
+    comparison = dataframe_from_records(metrics["validation_model_comparison"])
+    comparison = comparison.sort_values("Average precision", ascending=False)
+    st.dataframe(
+        comparison[[
+            "Model",
+            "Average precision",
+            "ROC-AUC",
+            "Precision",
+            "Recall",
+            "F2",
+            "Alert rate",
+        ]],
+        hide_index=True,
+        width="stretch",
     )
-    cohort_key = cohort_choice.lower()
-    cohort = dataframe_from_records(metrics["cohorts"][cohort_key])
-    st.dataframe(cohort, hide_index=True, width="stretch")
-
-    if cohort_choice == "Product" and not cohort.empty:
-        chart = cohort.set_index("ProductCD")[["Precision", "Recall"]]
-        st.bar_chart(chart)
-    elif cohort_choice == "Device" and not cohort.empty:
-        chart = cohort.set_index("DeviceType")[["Precision", "Recall"]]
-        st.bar_chart(chart)
-
-    retrieval = metrics["retrieval"]
-    st.subheader("Similar-case retrieval diagnostic")
-    retrieval_columns = st.columns(3)
-    retrieval_columns[0].metric(
-        "Reference fraud rate", format_percent(retrieval["Reference fraud rate"])
-    )
-    retrieval_columns[1].metric(
-        "Fraud-query neighbor rate",
-        format_percent(retrieval["Fraud-query neighbor fraud rate"]),
-    )
-    retrieval_columns[2].metric(
-        "Lift vs. reference", f"{retrieval['Fraud-query lift vs reference']:.2f}×"
-    )
-    st.caption(
-        "This retrospective retrieval result is descriptive evidence and does not "
-        "convert neighbor outcomes into a fraud probability."
-    )
+    st.bar_chart(comparison.set_index("Model")["Average precision"])
 
 
 def render_explanations(api_url: str) -> None:
     st.title("Model explanations")
     st.caption(
-        "Post-hoc analysis of the frozen tuned XGBoost model. Notebook 05 used the "
+        "Post-hoc analysis of the frozen tuned XGBoost model. Notebook 04 used the "
         "final test set for reporting only; it did not change the model or threshold."
     )
 
@@ -246,116 +226,35 @@ def render_explanations(api_url: str) -> None:
     })
     st.dataframe(fidelity, hide_index=True, width="stretch")
     st.caption(lime_summary["warning"])
-    st.error(xai["required_boundary"])
 
-
-def render_investigation(api_url: str) -> None:
-    st.title("Transaction investigation")
+    st.subheader("Representative local explanations")
     st.caption(
-        "Review a curated retrospective transaction exported by Notebook 04. "
-        "Individual ground truth is intentionally withheld from the assistant view."
+        "Notebook 04 deterministically selected one median-risk test case from "
+        "each confusion-matrix outcome. Ground-truth outcomes are not exposed here."
     )
-
-    cases = load_demo_cases(api_url)
-    if not cases:
-        st.warning("No demonstration transactions are available.")
-        return
-
-    case_by_id = {int(case["transaction_id"]): case for case in cases}
+    transaction_ids = fidelity["Transaction ID"].astype("int64").tolist()
     transaction_id = st.selectbox(
-        "Transaction",
-        options=list(case_by_id),
-        format_func=lambda value: (
-            f"{value} — ${case_by_id[value]['transaction_amount']:,.2f} — "
-            f"Product {case_by_id[value]['product_code']}"
-        ),
+        "Representative transaction", options=transaction_ids
     )
+    local = load_local_xai(api_url, int(transaction_id))
 
-    investigation = load_investigation(api_url, int(transaction_id))
-    transaction = investigation["transaction"]
-    signal = investigation["model_signal"]
-
-    status = "Alert generated" if signal["alert_generated"] else "No alert"
-    signal_columns = st.columns(2)
-    signal_columns[0].markdown(
-        "**Risk score**  \n"
-        f"`{format_percent(signal['fraud_risk_score'], 2)}`"
+    local_metrics = st.columns(3)
+    local_metrics[0].metric(
+        "SHAP base risk score", f"{local['base_risk_score']:.4f}"
     )
-    signal_columns[1].markdown(f"**Model decision**  \n`{status}`")
-    transaction_columns = st.columns(2)
-    transaction_columns[0].markdown(
-        f"**Amount**  \n`${transaction['transaction_amount']:,.2f}`"
+    local_metrics[1].metric(
+        "Model risk score", f"{local['model_risk_score']:.4f}"
     )
-    transaction_columns[1].markdown(
-        "**Amount percentile**  \n"
-        f"`{format_percent(transaction['amount_percentile'])}`"
-    )
-
-    st.warning(signal["score_warning"])
-
-    profile = st.container()
-    evidence = st.container()
-    with profile:
-        st.subheader("Transaction profile")
-        profile_rows = [
-            {"Field": "Transaction ID", "Value": transaction["transaction_id"]},
-            {"Field": "Product", "Value": transaction["product_code"]},
-            {"Field": "Card network", "Value": transaction["card_network"]},
-            {"Field": "Card type", "Value": transaction["card_type"]},
-            {"Field": "Device", "Value": transaction["device_type"]},
-            {
-                "Field": "Purchase email domain",
-                "Value": transaction["purchase_email_domain"],
-            },
-            {
-                "Field": "Elapsed dataset day",
-                "Value": f"{transaction['elapsed_dataset_day']:.1f}",
-            },
-        ]
-        profile_frame = pd.DataFrame.from_records(profile_rows)
-        profile_frame["Value"] = profile_frame["Value"].map(str)
-        st.dataframe(profile_frame, hide_index=True, width="stretch")
-
-    with evidence:
-        st.subheader("Similar labeled reference cases")
-        neighbors = dataframe_from_records(investigation["similar_reference_cases"])
-        display_columns = [
-            "rank",
-            "transaction_id",
-            "cosine_similarity",
-            "reference_fraud_label",
-            "reference_model_risk_score",
-            "transaction_amount",
-            "product_code",
-            "device_type",
-        ]
-        st.dataframe(
-            neighbors[display_columns], hide_index=True, width="stretch"
-        )
-        st.caption(
-            "Reference labels are historical context. Similarity does not prove that "
-            "the query transaction has the same outcome."
-        )
-
-    st.subheader("Post-hoc model explanation")
-    explanation = investigation["model_explanation"]
-    explanation_metrics = st.columns(3)
-    explanation_metrics[0].metric(
-        "SHAP base risk score", format_percent(explanation["base_risk_score"], 2)
-    )
-    explanation_metrics[1].metric(
-        "Model risk score", format_percent(explanation["model_risk_score"], 2)
-    )
-    explanation_metrics[2].metric(
-        "Frozen threshold", format_percent(explanation["decision_threshold"], 2)
+    local_metrics[2].metric(
+        "Frozen threshold", f"{local['decision_threshold']:.4f}"
     )
 
     shap_tab, lime_tab = st.tabs(["SHAP — primary", "LIME — secondary"])
     with shap_tab:
-        shap_evidence = explanation["shap"]
+        shap_evidence = local["shap"]
         st.image(
             load_artifact(api_url, shap_evidence["figure"]),
-            caption="Local score decomposition for this transaction",
+            caption="Local decomposition of the frozen model score",
             width="stretch",
         )
         contributions = dataframe_from_records(shap_evidence["contributions"])
@@ -380,15 +279,15 @@ def render_investigation(api_url: str) -> None:
         st.info(shap_evidence["interpretation"])
 
     with lime_tab:
-        lime_evidence = explanation["lime"]
+        lime_evidence = local["lime"]
         st.error(
-            f"Secondary evidence only · local fidelity R²="
-            f"{lime_evidence['local_fidelity_r2']:.3f} · "
+            "Secondary evidence only · "
+            f"local fidelity R²={lime_evidence['local_fidelity_r2']:.3f} · "
             f"absolute prediction error={lime_evidence['absolute_prediction_error']:.3f}."
         )
         st.image(
             load_artifact(api_url, lime_evidence["figure"]),
-            caption="Sparse LIME surrogate around this transaction",
+            caption="Sparse local surrogate around this transaction",
             width="stretch",
         )
         contributions = dataframe_from_records(lime_evidence["contributions"])
@@ -412,14 +311,7 @@ def render_investigation(api_url: str) -> None:
         )
         st.caption(lime_evidence["warning"])
 
-    st.subheader("Investigation assistant")
-    assistant = investigation["assistant_summary"]
-    st.caption(
-        f"Provider: {assistant['provider']} · Automated grounding checks: "
-        f"{'passed' if assistant['automated_checks_pass'] else 'failed'}"
-    )
-    st.markdown(assistant["markdown"])
-    st.error(investigation["required_boundary"])
+    st.error(xai["required_boundary"])
 
 
 def render_scoring(api_url: str) -> None:
@@ -466,10 +358,9 @@ def render_methodology(api_url: str) -> None:
     )
     st.write(
         "Notebooks 01–03 provide the course-aligned machine learning workflow. "
-        "Notebook 04 exports retrieval evidence and grounded assistant summaries. "
-        "Notebook 05 adds the MIA 5126 post-hoc SHAP and LIME extension without "
-        "changing the model. The API owns all artifacts; the frontend is "
-        "presentation-only."
+        "Notebook 04 adds the MIA 5126 post-hoc SHAP and LIME extension without "
+        "changing the model. The API owns the frozen model, evaluation, and XAI "
+        "artifacts; the frontend is presentation-only."
     )
 
     st.subheader("Frozen model contract")
@@ -491,10 +382,9 @@ def render_methodology(api_url: str) -> None:
 - SHAP and LIME describe learned model behavior; neither establishes causality.
 - TransactionDT importance may reflect temporal drift or transaction ordering.
 - LIME has low local fidelity for these cases and is secondary evidence only.
-- Similar-case retrieval depends on selected tokens and is contextual only.
-- Missing attributes and cohort-level recall gaps require monitoring.
-- The assistant cannot establish fraud or make an autonomous enforcement decision.
-- A human investigator must verify evidence and follow approved policy.
+- Missing attributes and temporal performance drift require monitoring.
+- Model scores and post-hoc explanations cannot establish fraud or make an autonomous enforcement decision.
+- A human reviewer must verify evidence and follow approved policy.
 """
     )
 
@@ -505,7 +395,6 @@ page = st.sidebar.radio(
     [
         "Overview",
         "Model explanations",
-        "Investigation",
         "Score transactions",
         "Methodology",
     ],
@@ -530,8 +419,6 @@ try:
         render_overview(api_url)
     elif page == "Model explanations":
         render_explanations(api_url)
-    elif page == "Investigation":
-        render_investigation(api_url)
     elif page == "Score transactions":
         render_scoring(api_url)
     else:
