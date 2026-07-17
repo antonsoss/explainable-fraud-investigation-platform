@@ -437,7 +437,7 @@ def render_about(api_url: str) -> None:
                     penwidth=3
                 ];
                 eda [
-                    label="01_Exploratory_Data_Analysis_\nBusiness_Understanding.ipynb",
+                    label="01_eda_and_\nbusiness_understanding.ipynb",
                     shape=note,
                     style="filled",
                     color="#F37626",
@@ -445,7 +445,7 @@ def render_about(api_url: str) -> None:
                     penwidth=3
                 ];
                 preparation [
-                    label="02_Data_Wrangling_Preprocessing_\nFeature_Engineering.ipynb",
+                    label="02_data_preparation.ipynb",
                     shape=note,
                     style="filled",
                     color="#F37626",
@@ -453,7 +453,7 @@ def render_about(api_url: str) -> None:
                     penwidth=3
                 ];
                 modeling [
-                    label="03_ML_Model_Selection_\nTuning_Evaluation.ipynb",
+                    label="03_model_selection_and_\nevaluation.ipynb",
                     shape=note,
                     style="filled",
                     color="#F37626",
@@ -461,7 +461,7 @@ def render_about(api_url: str) -> None:
                     penwidth=3
                 ];
                 xai [
-                    label="04_Post_Hoc_XAI_SHAP_LIME.ipynb",
+                    label="04_post_hoc_explainability.ipynb",
                     shape=note,
                     style="filled",
                     color="#F37626",

@@ -6,7 +6,15 @@ An MIA 5100 machine learning project for detecting fraudulent transactions and s
 
 The project uses the [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection) to compare classifiers under severe class imbalance. The workflow emphasizes chronological evaluation, training-only preprocessing, precision-recall analysis, operational threshold selection, post-hoc explanation, and human review.
 
-Notebooks 01–03 form the MIA 5100 machine learning core. Notebook 04 adds post-hoc SHAP and LIME analysis aligned with the XAI material from MIA 5126; it does not alter the frozen model or threshold. The application uses a standalone FastAPI backend and a Streamlit frontend connected only through HTTP/JSON.
+### Course alignment
+
+| Project component | Topics implemented | Related lecture material |
+|---|---|---|
+| `01_eda_and_business_understanding.ipynb` | Problem framing, exploratory analysis, data quality, class imbalance, and business context | **MIA 5100 Week 1:** Introduction to Machine Learning & Applications; **Week 2:** Machine Learning Workflow |
+| `02_data_preparation.ipynb` | Data wrangling, missing-value treatment, categorical encoding, scaling, feature engineering, feature selection, and chronological splitting | **MIA 5100 Week 2:** Machine Learning Workflow; **Week 3:** Feature Engineering |
+| `03_model_selection_and_evaluation.ipynb` | Parametric and non-parametric classifiers, ensemble models, neural networks, expanding-window cross-validation, hyperparameter tuning, threshold selection, and performance evaluation | **MIA 5100 Week 4:** Parametric & Non-parametric Methods; **Week 6:** Model Evaluation & Performance Improvement; **Week 7:** Introduction to Deep Learning |
+| `04_post_hoc_explainability.ipynb` | Global and local explanations, SHAP, LIME, and explanation reliability checks applied after model selection | **MIA 5126 Data-Centric AI lecture:** Explainable AI (XAI), including global/local and post-hoc explanations |
+| FastAPI backend and Streamlit frontend | Frozen-artifact loading, transaction scoring, model metrics, XAI evidence, HTTP/JSON integration, and an investigator-facing interface | **MIA 5100 Week 10:** Model Deployment |
 
 ## Current results
 
@@ -29,10 +37,10 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 
 | Notebook | Status |
 |---|:---:|
-| `01_Exploratory_Data_Analysis_Business_Understanding.ipynb` | Complete |
-| `02_Data_Wrangling_Preprocessing_Feature_Engineering.ipynb` | Complete |
-| `03_ML_Model_Selection_Tuning_Evaluation.ipynb` | Complete |
-| `04_Post_Hoc_XAI_SHAP_LIME.ipynb` | Complete |
+| `01_eda_and_business_understanding.ipynb` | Complete |
+| `02_data_preparation.ipynb` | Complete |
+| `03_model_selection_and_evaluation.ipynb` | Complete |
+| `04_post_hoc_explainability.ipynb` | Complete |
 | Fraud investigation API (FastAPI) | Complete |
 | Fraud investigation frontend (Streamlit) | Complete |
 
@@ -50,7 +58,7 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 ├── frontend/              # Standalone Streamlit frontend and API client
 ├── src/                   # Reusable raw-to-score pipeline
 ├── tests/                 # Pipeline integration and API contract tests
-└── requirements.txt       # Complete notebooks and application environment
+└── pyproject.toml         # Project metadata, packaging, and dependencies
 ```
 
 ## Setup
@@ -60,8 +68,12 @@ git clone https://github.com/antonsoss/explainable-fraud-investigation-platform.
 cd explainable-fraud-investigation-platform
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -e .
 ```
+
+The editable install keeps the Python packages connected to the repository-local
+model, preprocessing, evaluation, and XAI artifacts used by the application.
 
 On macOS, XGBoost also requires:
 
@@ -69,10 +81,10 @@ On macOS, XGBoost also requires:
 brew install libomp
 ```
 
-Download the [IEEE-CIS Fraud Detection competition files](https://www.kaggle.com/competitions/ieee-fraud-detection) and place them in `data/raw/`. Run Notebooks 01–04 in numerical order. Notebook 04 produces the SHAP and LIME artifacts consumed by the application.
+Download the [IEEE-CIS Fraud Detection competition files](https://www.kaggle.com/competitions/ieee-fraud-detection) and place them in `data/raw/`. Run the notebooks in numerical order. `04_post_hoc_explainability.ipynb` produces the SHAP and LIME artifacts consumed by the application.
 
 ```bash
-jupyter notebook notebooks/04_Post_Hoc_XAI_SHAP_LIME.ipynb
+jupyter notebook notebooks/04_post_hoc_explainability.ipynb
 ```
 
 The API and frontend consume the precomputed XAI files and do not import SHAP or LIME at runtime.

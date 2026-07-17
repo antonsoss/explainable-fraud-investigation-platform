@@ -22,7 +22,8 @@ SECONDS_PER_HOUR = 60 * 60
 def engineer_transaction_features(raw: pd.DataFrame) -> pd.DataFrame:
     """Create the deterministic row-level features.
 
-    These match Notebook 02: Data Wrangling, Preprocessing & Feature Engineering.
+    These match transformations defined in
+    ``02_data_preparation.ipynb``.
     """
     required = {
         "TransactionAmt", "TransactionDT", "P_emaildomain", "R_emaildomain",
@@ -66,7 +67,7 @@ def engineer_transaction_features(raw: pd.DataFrame) -> pd.DataFrame:
 class FraudPreprocessor:
     """Apply the frozen raw-record transformations.
 
-    These come from Notebook 02: Data Wrangling, Preprocessing & Feature Engineering.
+    These come from ``02_data_preparation.ipynb``.
     """
 
     def __init__(self, artifact_dir: str | Path):
@@ -172,7 +173,7 @@ class FraudScoringPipeline:
         manifest_path = model_dir / "champion_manifest.json"
         if not manifest_path.exists():
             raise FileNotFoundError(
-                "Run 03_ML_Model_Selection_Tuning_Evaluation.ipynb "
+                "Run 03_model_selection_and_evaluation.ipynb "
                 "to create champion_manifest.json."
             )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

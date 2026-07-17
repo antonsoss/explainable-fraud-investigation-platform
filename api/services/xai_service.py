@@ -1,4 +1,4 @@
-"""Serve frozen post-hoc explanation artifacts exported by Notebook 04."""
+"""Serve artifacts exported by ``04_post_hoc_explainability.ipynb``."""
 
 from __future__ import annotations
 
@@ -123,7 +123,8 @@ class XAIService:
         ].sort_values("Rank")
         if shap_rows.empty or lime_rows.empty:
             raise KeyError(
-                f"No Notebook 04 explanation exists for transaction {transaction_id}."
+                "No 04_post_hoc_explainability.ipynb explanation exists for "
+                f"transaction {transaction_id}."
             )
 
         top_n = max(1, min(int(top_n), len(shap_rows)))
