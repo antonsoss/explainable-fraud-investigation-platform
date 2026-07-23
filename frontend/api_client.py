@@ -21,11 +21,11 @@ class FraudApiClient:
     def __post_init__(self) -> None:
         self.base_url = self.base_url.rstrip("/")
         api_suffix = "/api/v1"
-        self.server_url = (
-            self.base_url[: -len(api_suffix)]
-            if self.base_url.endswith(api_suffix)
-            else self.base_url
-        )
+        if self.base_url.endswith(api_suffix):
+            self.server_url = self.base_url[: -len(api_suffix)]
+        else:
+            self.server_url = self.base_url
+            self.base_url = f"{self.base_url}{api_suffix}"
 
     def _request(self, method: str, path: str, **kwargs) -> Any:
         try:

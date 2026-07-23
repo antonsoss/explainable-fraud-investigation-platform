@@ -12,29 +12,42 @@ authors = [
     { name = "Antonio Sosa" },
 ]
 dependencies = [
-    # Data and machine learning
-    "numpy>=2.0,<3.0",
+    # Shared by the API and Streamlit frontend
     "pandas>=2.2,<4.0",
+]
+
+[project.optional-dependencies]
+api = [
+    # Frozen preprocessing and model scoring
+    "numpy>=2.0,<3.0",
     "pyarrow>=17.0,<26.0",
     "scipy>=1.14,<2.0",
-    "scikit-learn>=1.5,<2.0",
-    "xgboost>=2.1,<4.0",
+    "scikit-learn==1.9.0",
+    "xgboost==3.2.0",
     "joblib>=1.4,<2.0",
 
-    # Visualization and explainability
+    # FastAPI backend
+    "fastapi>=0.115,<1.0",
+    "pydantic>=2.0,<3.0",
+    "uvicorn[standard]>=0.34,<1.0",
+]
+
+frontend = [
+    # Streamlit presentation layer and HTTP client
+    "requests>=2.32,<3.0",
+    "streamlit>=1.45,<2.0",
+]
+
+xai = [
+    # Offline explainability analysis
     "matplotlib>=3.9,<4.0",
     "seaborn>=0.13,<1.0",
     "shap>=0.50,<0.52",
     "lime>=0.2.0.1,<0.3",
+]
 
-    # FastAPI backend and Streamlit frontend
-    "fastapi>=0.115,<1.0",
-    "pydantic>=2.0,<3.0",
-    "uvicorn[standard]>=0.34,<1.0",
-    "requests>=2.32,<3.0",
-    "streamlit>=1.45,<2.0",
-
-    # Notebook environment
+notebook = [
+    # Interactive notebook environment
     "jupyter>=1.1,<2.0",
     "ipykernel>=6.29,<8.0",
 ]

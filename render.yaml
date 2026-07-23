@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: explainable-fraud-api
+    runtime: python
+    plan: free
+    region: ohio
+    buildCommand: python -m pip install ".[api]"
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+
+  - type: web
+    name: explainable-fraud-app
+    runtime: python
+    plan: free
+    region: ohio
+    buildCommand: python -m pip install ".[frontend]"
+    startCommand: streamlit run frontend/streamlit_app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+    healthCheckPath: /_stcore/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: FRAUD_API_URL
+        fromService:
+          type: web
+          name: explainable-fraud-api
+          envVarKey: RENDER_EXTERNAL_URL

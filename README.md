@@ -69,7 +69,7 @@ cd explainable-fraud-investigation-platform
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e .
+python -m pip install -e ".[api,frontend,xai,notebook]"
 ```
 
 The editable install keeps the Python packages connected to the repository-local
@@ -104,6 +104,34 @@ streamlit run frontend/streamlit_app.py
 ```
 
 The frontend uses `http://127.0.0.1:8000/api/v1` by default. Set `FRAUD_API_URL` to point it at another API deployment. The backend can use `FRAUD_PROJECT_ROOT` when artifacts are mounted outside the repository and `FRAUD_ALLOWED_ORIGINS` to configure comma-separated browser origins.
+
+## Deploy on Render
+
+The repository includes a [`render.yaml`](render.yaml) Blueprint that creates two
+Python web services in Render's Ohio region:
+
+| Service | Purpose | Health check |
+|---|---|---|
+| `explainable-fraud-api` | FastAPI preprocessing, scoring, metrics, and XAI artifact service | `/api/v1/health` |
+| `explainable-fraud-app` | Streamlit investigator interface | `/_stcore/health` |
+
+The Blueprint installs only the dependencies required by each service. It also
+copies the backend's Render-generated public URL into the frontend's
+`FRAUD_API_URL`; `FraudApiClient` accepts either the service origin or the full
+`/api/v1` URL.
+
+To deploy:
+
+1. Commit and push the repository to GitHub.
+2. In Render, select **New → Blueprint**.
+3. Connect `antonsoss/explainable-fraud-investigation-platform`.
+4. Confirm the two services defined in `render.yaml` and apply the Blueprint.
+5. Open the `explainable-fraud-app` URL after both health checks pass.
+
+The Blueprint uses free instances to avoid an automatic charge. Render may spin
+down a free service after 15 minutes without inbound traffic, so the first visit
+can take approximately one minute to wake each service. If the API exceeds the
+free instance's memory limit, upgrade only `explainable-fraud-api`.
 
 ### API endpoints
 
