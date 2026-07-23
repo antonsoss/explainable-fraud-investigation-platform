@@ -372,21 +372,179 @@ def render_scoring(api_url: str) -> None:
 
 
 def render_about(api_url: str) -> None:
-    st.title("About")
-    st.markdown("## Explainable Fraud Detection and Investigation Platform")
-    identity_columns = st.columns(3)
-    identity_columns[0].markdown("**Author**  \nAntonio Sosa")
-    identity_columns[1].markdown("**University**  \nUniversity of Ottawa")
-    identity_columns[2].markdown(
-        "**Course**  \nMIA 5100 — Foundations and Applications of Machine Learning"
-    )
+    st.html(
+        """
+        <style>
+        .about-kicker {
+            color: #159a91;
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            margin-bottom: 0.65rem;
+        }
+        .about-heading {
+            color: var(--text-color);
+            font-size: clamp(2.4rem, 5vw, 4.7rem);
+            font-weight: 800;
+            letter-spacing: -0.055em;
+            line-height: 1;
+            margin: 0 0 0.8rem 0;
+        }
+        .about-intro {
+            color: #647473;
+            font-size: 1.1rem;
+            line-height: 1.55;
+            margin: 0 0 2rem 0;
+            max-width: 70rem;
+        }
+        .project-context-card {
+            background:
+                radial-gradient(circle at 96% 0%, rgba(21, 154, 145, 0.20), transparent 32%),
+                #0d1c2a;
+            border: 1px solid #274352;
+            border-radius: 1.35rem;
+            box-shadow: 0 18px 45px rgba(5, 15, 25, 0.14);
+            color: #eef7f5;
+            margin-bottom: 2rem;
+            padding: clamp(1.6rem, 3.5vw, 3rem);
+        }
+        .project-card-kicker,
+        .project-meta-label {
+            color: #28afa5;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+        }
+        .project-card-title {
+            color: #f4faf8;
+            font-size: clamp(2rem, 4vw, 3.65rem);
+            font-weight: 780;
+            letter-spacing: -0.045em;
+            line-height: 1.08;
+            margin: 0.8rem 0 2.2rem 0;
+            max-width: 76rem;
+        }
+        .project-meta-grid {
+            display: grid;
+            gap: 0;
+            grid-template-columns: 0.9fr 1.05fr 1.45fr 1fr;
+        }
+        .project-meta-item {
+            border-right: 1px solid #31505f;
+            min-height: 5rem;
+            padding: 0 1.35rem;
+        }
+        .project-meta-item:first-child {
+            padding-left: 0;
+        }
+        .project-meta-item:last-child {
+            border-right: 0;
+            padding-right: 0;
+        }
+        .project-meta-value {
+            color: #f4faf8;
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.45;
+            margin-top: 0.75rem;
+        }
+        .project-repository {
+            border-top: 1px solid #31505f;
+            margin-top: 1.4rem;
+            padding-top: 1.35rem;
+        }
+        .project-repository a,
+        .project-summary a {
+            color: #42d3c6 !important;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 0.25rem;
+        }
+        .project-repository a {
+            display: inline-block;
+            font-size: 1rem;
+            margin-top: 0.65rem;
+        }
+        .project-summary {
+            border-top: 1px solid #31505f;
+            color: #b9c8c8;
+            font-size: 1rem;
+            line-height: 1.65;
+            margin-top: 1.6rem;
+            padding-top: 1.6rem;
+        }
+        @media (max-width: 900px) {
+            .project-meta-grid {
+                grid-template-columns: 1fr 1fr;
+                row-gap: 1.4rem;
+            }
+            .project-meta-item {
+                border-right: 0;
+                padding: 0;
+            }
+        }
+        @media (max-width: 560px) {
+            .project-meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        </style>
 
-    st.markdown(
-        "This project uses the [IEEE-CIS Fraud Detection dataset]"
-        "(https://www.kaggle.com/competitions/ieee-fraud-detection) to develop and "
-        "compare machine-learning models for fraud detection. The selected XGBoost "
-        "model scores transaction risk, while SHAP and LIME help explain its "
-        "behavior. The platform is designed to support, not replace, human review."
+        <div class="about-kicker">PROJECT CONTEXT</div>
+        <h1 class="about-heading">About the project.</h1>
+        <p class="about-intro">
+            The course, source data, analytical purpose, technical architecture,
+            and responsible-use boundaries behind the Explainable Fraud Detection
+            and Investigation Platform.
+        </p>
+
+        <section class="project-context-card">
+            <div class="project-card-kicker">COURSE PROJECT</div>
+            <div class="project-card-title">
+                Explainable Fraud Detection and Investigation Platform
+            </div>
+
+            <div class="project-meta-grid">
+                <div class="project-meta-item">
+                    <div class="project-meta-label">AUTHOR</div>
+                    <div class="project-meta-value">Antonio Sosa</div>
+                </div>
+                <div class="project-meta-item">
+                    <div class="project-meta-label">UNIVERSITY</div>
+                    <div class="project-meta-value">University of Ottawa</div>
+                </div>
+                <div class="project-meta-item">
+                    <div class="project-meta-label">COURSE</div>
+                    <div class="project-meta-value">
+                        MIA 5100 — Foundations and Applications of Machine Learning
+                    </div>
+                </div>
+                <div class="project-meta-item">
+                    <div class="project-meta-label">PROFESSOR</div>
+                    <div class="project-meta-value">Dr. Olubisi Runsewe</div>
+                </div>
+            </div>
+
+            <div class="project-repository">
+                <div class="project-meta-label">REPOSITORY</div>
+                <a href="https://github.com/antonsoss/explainable-fraud-investigation-platform"
+                   target="_blank" rel="noopener noreferrer">
+                    github.com/antonsoss/explainable-fraud-investigation-platform ↗
+                </a>
+            </div>
+
+            <div class="project-summary">
+                This project uses the
+                <a href="https://www.kaggle.com/competitions/ieee-fraud-detection"
+                   target="_blank" rel="noopener noreferrer">
+                    IEEE-CIS Fraud Detection dataset ↗
+                </a>
+                to compare fraud-detection models, score transaction risk, and provide
+                post-hoc SHAP and LIME evidence for human review. It is a decision-support
+                platform, not an autonomous fraud determination or enforcement system.
+            </div>
+        </section>
+        """
     )
     model = FraudApiClient(api_url).model()
 
