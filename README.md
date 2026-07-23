@@ -108,15 +108,19 @@ The frontend uses `http://127.0.0.1:8000/api/v1` by default. Set `FRAUD_API_URL`
 ## Deploy on Render
 
 The repository includes a [`render.yaml`](render.yaml) Blueprint that creates two
-Python web services in Render's Ohio region:
+Docker-based web services on Render.
+
+**Live deployment:** [explainable-fraud-app.onrender.com](https://explainable-fraud-app.onrender.com)
 
 | Service | Purpose | Health check |
 |---|---|---|
 | `explainable-fraud-api` | FastAPI preprocessing, scoring, metrics, and XAI artifact service | `/api/v1/health` |
 | `explainable-fraud-app` | Streamlit investigator interface | `/_stcore/health` |
 
-The Blueprint installs only the dependencies required by each service. It also
-copies the backend's Render-generated public URL into the frontend's
+`Dockerfile.api` packages the API, scoring pipeline, and frozen artifacts, while
+`Dockerfile.frontend` packages the Streamlit interface and downloadable example.
+Both images use Python 3.14.3 and install only their service-specific dependency
+groups. The Blueprint also copies the backend's Render-generated public URL into the frontend's
 `FRAUD_API_URL`; `FraudApiClient` accepts either the service origin or the full
 `/api/v1` URL.
 
@@ -126,12 +130,29 @@ To deploy:
 2. In Render, select **New → Blueprint**.
 3. Connect `antonsoss/explainable-fraud-investigation-platform`.
 4. Confirm the two services defined in `render.yaml` and apply the Blueprint.
-5. Open the `explainable-fraud-app` URL after both health checks pass.
+5. Open the [deployed Streamlit application](https://explainable-fraud-app.onrender.com)
+   after both health checks pass.
 
 The Blueprint uses free instances to avoid an automatic charge. Render may spin
 down a free service after 15 minutes without inbound traffic, so the first visit
 can take approximately one minute to wake each service. If the API exceeds the
 free instance's memory limit, upgrade only `explainable-fraud-api`.
+
+To build and run the same containers locally:
+
+```bash
+docker build -f Dockerfile.api -t explainable-fraud-api .
+docker run --rm -p 8000:10000 explainable-fraud-api
+```
+
+In a second terminal, point the frontend at the local API:
+
+```bash
+docker build -f Dockerfile.frontend -t explainable-fraud-app .
+docker run --rm -p 8501:10000 \
+  -e FRAUD_API_URL=http://host.docker.internal:8000 \
+  explainable-fraud-app
+```
 
 ### API endpoints
 

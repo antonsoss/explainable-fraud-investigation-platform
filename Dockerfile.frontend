@@ -1,0 +1,19 @@
+FROM python:3.14.3-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY frontend/ ./frontend/
+
+RUN python -m pip install --no-cache-dir ".[frontend]"
+
+# The downloadable example is displayed by the fraud risk-scoring page.
+COPY examples/ ./examples/
+
+EXPOSE 10000
+
+CMD ["sh", "-c", "streamlit run frontend/streamlit_app.py --server.address 0.0.0.0 --server.port ${PORT:-10000} --server.headless true"]

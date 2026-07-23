@@ -1,21 +1,19 @@
 services:
   - type: web
     name: explainable-fraud-api
-    runtime: python
+    runtime: docker
     plan: free
-    region: ohio
-    buildCommand: python -m pip install ".[api]"
-    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile.api
+    dockerContext: .
     healthCheckPath: /api/v1/health
     autoDeployTrigger: commit
 
   - type: web
     name: explainable-fraud-app
-    runtime: python
+    runtime: docker
     plan: free
-    region: ohio
-    buildCommand: python -m pip install ".[frontend]"
-    startCommand: streamlit run frontend/streamlit_app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+    dockerfilePath: ./Dockerfile.frontend
+    dockerContext: .
     healthCheckPath: /_stcore/health
     autoDeployTrigger: commit
     envVars:
