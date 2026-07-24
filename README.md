@@ -6,6 +6,8 @@ An MIA 5100 machine learning project for detecting fraudulent transactions and s
 
 The project uses the [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection) to compare classifiers under severe class imbalance. The workflow emphasizes chronological evaluation, training-only preprocessing, precision-recall analysis, operational threshold selection, post-hoc explanation, and human review.
 
+**Live application:** [explainable-fraud-app.onrender.com](https://explainable-fraud-app.onrender.com)
+
 ### Course alignment
 
 | Project component | Topics implemented | Related lecture material |
@@ -61,6 +63,31 @@ For the XAI extension, Tree SHAP was computed with a fixed 100-row training back
 └── pyproject.toml         # Project metadata, packaging, and dependencies
 ```
 
+## Data architecture
+
+```mermaid
+flowchart LR
+    A["Source (external)<br/>Kaggle competition files"]
+    B["Raw<br/>data/raw/<br/>Transaction and identity CSV files"]
+    C["Prepared<br/>data/processed/<br/>Chronological train, validation, and test sets"]
+    D["Frozen analytical assets<br/>models/ and results/<br/>Preprocessing, model, metrics, and XAI"]
+    E["Serving<br/>api/<br/>Preprocessing, scoring, metrics, and XAI endpoints"]
+    F["Presentation<br/>frontend/<br/>Streamlit investigator interface"]
+
+    A --> B --> C --> D --> E --> F
+```
+
+| Layer | Repository location | Contents | Git policy |
+|---|---|---|---|
+| Source | External to the repository | [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection) competition files | Not applicable |
+| Raw | `data/raw/` | Original transaction and identity CSV files | Source data ignored |
+| Prepared | `data/processed/` | Chronological train, validation, and test feature, target, and transaction-ID Parquet files | Generated data ignored |
+| Preprocessing | `models/preprocessing/` | Fitted imputers, frequency maps, encoder, scaler, feature-removal lists, and frozen 359-feature schema | Project-generated artifacts committed |
+| Model and evaluation | `models/trained/` and `results/model_comparison/` | Champion XGBoost model, model metadata, validation comparison, later-period test metrics, and saved predictions | Project-generated artifacts committed |
+| Explainability | `results/xai/` | Global and local SHAP/LIME outputs, figures, metadata, and reliability diagnostics | Project-generated reporting artifacts committed |
+| API | `api/` and `src/` | Raw-data transformation, fraud-risk scoring, saved metrics, and XAI endpoints | Application code committed |
+| Presentation | `frontend/` and `examples/` | Streamlit investigator interface and downloadable sample scoring CSV | Application code and synthetic example committed |
+
 ## Setup
 
 ```bash
@@ -109,8 +136,6 @@ The frontend uses `http://127.0.0.1:8000/api/v1` by default. Set `FRAUD_API_URL`
 
 The repository includes a [`render.yaml`](render.yaml) Blueprint that creates two
 Docker-based web services on Render.
-
-**Live deployment:** [explainable-fraud-app.onrender.com](https://explainable-fraud-app.onrender.com)
 
 | Service | Purpose | Health check |
 |---|---|---|
